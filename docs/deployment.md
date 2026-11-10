@@ -48,4 +48,8 @@ Any other host, such as a preview URL, serves the modeling workspace at `/` and 
 
 To add an app, create `apps/<name>` with `vite.config.ts` calling `chapAppConfig` from `deploy/vite-app.config.ts`, then add its host to `vercel.json` and to the domain list on the Vercel project (`vercel domains add <host> chap-blocks`).
 
+## chap-sandbox (blocks gallery)
+
+`.github/workflows/deploy-sandbox.yml` builds `apps/blocks-demo` and copies `dist/` to https://chap-sandbox.dhis2.org/blocks/ on every push to `main`, using the shared deploy action from [dhis2-chap/chap-sandbox](https://github.com/dhis2-chap/chap-sandbox) and the `CHAP_SANDBOX_SSH_KEY` secret (a key the server restricts to `/mnt/data/www/blocks`). The gallery builds with `base: './'`, so the same build works at `/blocks/` there, at `/blocks-demo/` on Vercel preview URLs and at the root of `blocks.edvinas.no`. The host is static only, so the apps that need `/chap-api` are not deployed there. Adding another app: AGENTS.md here and in chap-sandbox.
+
 Development ports: reference 5180, blocks gallery 5181, data checker 5184, signals 5186 (strict: a busy port fails instead of moving).

@@ -1,0 +1,59 @@
+# Build the blocks gallery (apps/blocks-demo) and copy it to chap-sandbox,
+# where it is served at https://chap-sandbox.dhis2.org/blocks/.
+#
+# The CHAP_SANDBOX_SSH_KEY secret is a deploy key that the server forces into
+# /mnt/data/www/blocks, so this workflow can overwrite that directory and
+# nothing else. Setup and the shared deploy action: AGENTS.md in
+# dhis2-chap/chap-sandbox.
+
+name: Deploy to chap-sandbox
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-chap-sandbox-blocks
+  cancel-in-progress: false
+
+jobs:
+  # Skips the deploy, instead of failing every push, until the server side is set
+  # up: the secret only exists once scripts/add-app.sh has run in chap-sandbox.
+  key:
+    runs-on: ubuntu-latest
+    outputs:
+      present: ${{ steps.check.outputs.present }}
+    steps:
+      - id: check
+        env:
+          SSH_KEY: ${{ secrets.CHAP_SANDBOX_SSH_KEY }}
+        run: echo "present=${SSH_KEY:+true}" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: key
+    if: needs.key.outputs.present == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0; pnpm version from packageManager
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @chap-blocks/demo build
+
+      - uses: dhis2-chap/chap-sandbox/.github/actions/deploy@main
+        with:
+          ssh-key: ${{ secrets.CHAP_SANDBOX_SSH_KEY }}
+          dir: apps/blocks-demo/dist
+          path: /blocks/
