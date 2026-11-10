@@ -1,0 +1,88 @@
+.modelDetailsContainer {
+    padding: 0px;
+}
+
+.loadingText {
+    font-size: 1rem;
+    color: gray;
+}
+
+.selectedModelDetails {
+    border: 1px solid rgb(160, 173, 186);
+    border-radius: 7px;
+    background-color: #f0f8ff;
+    padding: 15px;
+}
+
+.modelAuthor {
+    display: flex;
+    align-items: center;
+    margin-block-end: 8px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.modelAuthorLogo {
+    block-size: 32px;
+    inline-size: auto;
+    margin-inline: 6px;
+}
+
+.modelAuthorName {
+    font-weight: bold;
+}
+
+.modelHumanName {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 8px 0;
+}
+
+.modelEmail {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.modelDescription {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.modelDescriptionText {
+    margin-inline-start: 10px;
+    margin-block-start: 10px;
+}
+
+.modelCovariates {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.modelCovariatesList {
+    font-size: 0.8rem;
+    color: #666;
+    list-style: none;
+    padding: 0;
+    margin-block-start: 8px;
+    margin-inline-start: 5px;
+}
+
+.modelCovariateItem {
+    margin: 2px 0;
+}
+
+.modelCitation {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.modelCitationText {
+    margin-block-start: 10px;
+    margin-inline-start: 10px;
+    text-wrap: pretty;
+}
+
+.modelLink {
+    font-size: 0.9rem;
+    color: #666;
+}

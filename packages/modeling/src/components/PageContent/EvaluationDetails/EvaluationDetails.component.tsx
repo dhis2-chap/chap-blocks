@@ -1,0 +1,79 @@
+import i18n from '@dhis2/d2-i18n';
+import { CustomEvaluationPlotsWidget } from './CustomEvaluationPlots';
+import { QuickActionsWidget } from './QuickActionsWidget';
+import { ModelExecutionResultWidget } from './ModelExecutionResultWidget';
+import styles from './EvaluationDetails.module.css';
+import { useBacktestById } from '../../../hooks/useBacktestById';
+import { CircularLoader, NoticeBox } from '@dhis2/ui';
+import { EvaluationSummaryWidget } from './EvaluationSummaryWidget';
+import { EvaluationMetricsWidget } from './EvaluationMetricsWidget/EvaluationMetricsWidget';
+import { OutbreakMetricsWidget } from './OutbreakMetricsWidget/OutbreakMetricsWidget';
+
+type Props = {
+    evaluationId: number;
+};
+
+export const EvaluationDetailsComponent = ({ evaluationId }: Props) => {
+    const { backtest, isLoading: isBacktestLoading, error: backtestError } = useBacktestById(evaluationId);
+    const predictionSetupId = backtest?.predictionSetupId ?? undefined;
+
+    if (isBacktestLoading) {
+        return (
+            <div className={styles.loadingContainer}>
+                <CircularLoader />
+            </div>
+        );
+    }
+
+    if (backtestError) {
+        console.error('EvaluationDetails: error loading backtest', {
+            message: backtestError?.message,
+            error: backtestError,
+            evaluationId,
+        });
+        return (
+            <div className={styles.errorContainer}>
+                <NoticeBox error title={i18n.t('Unable to load data')}>
+                    <p>{i18n.t('There was a problem loading required data. See the browser console for details.')}</p>
+                </NoticeBox>
+            </div>
+        );
+    }
+
+    if (!backtest) {
+        return (
+            <div className={styles.errorContainer}>
+                <NoticeBox warning title={i18n.t('No data available')}>
+                    <p>{i18n.t('The evaluation you are looking for does not exist or you do not have permission to access it.')}</p>
+                </NoticeBox>
+            </div>
+        );
+    }
+
+    return (
+        // Keyed so a cached navigation to another evaluation remounts the widgets
+        // instead of reusing the previous evaluation's plot filters and selections.
+        <div key={evaluationId} className={styles.container}>
+            <div className={styles.leftColumn}>
+                <ModelExecutionResultWidget
+                    backtest={backtest}
+                />
+                <CustomEvaluationPlotsWidget
+                    evaluationId={evaluationId}
+                    periodType={backtest.dataset.periodType}
+                />
+                <OutbreakMetricsWidget evaluationId={evaluationId} specificationId={backtest.specificationId} />
+            </div>
+            <div className={styles.rightColumn}>
+                <QuickActionsWidget
+                    evaluationId={evaluationId}
+                    predictionSetupId={predictionSetupId}
+                />
+                <EvaluationSummaryWidget
+                    evaluationId={evaluationId}
+                />
+                <EvaluationMetricsWidget evaluationId={evaluationId} specificationId={backtest.specificationId} metrics={backtest.aggregateMetrics} />
+            </div>
+        </div>
+    );
+};

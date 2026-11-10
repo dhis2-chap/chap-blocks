@@ -1,0 +1,89 @@
+import { useChapClient } from '@chap-blocks/runtime';
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useDataEngine } from '@chap-blocks/runtime';
+import { useNavigate } from 'react-router-dom';
+import { ApiError, FeatureCollectionModel, JobResponse, RunPredictionSetupRequest } from '@chap-blocks/api';
+import { ModelExecutionFormValues } from '../../ModelExecutionForm/hooks/useModelExecutionFormState';
+import { prepareBacktestData } from '../../ModelExecutionForm/utils/prepareBacktestData';
+import { buildOrgUnitFeatureCollection } from '../../ModelExecutionForm/utils/orgUnitGeoJson';
+import { getImportSummaryFromApiError } from '../../ModelExecutionForm/utils/importSummaryUtils';
+import { type Dhis2PeriodSettings } from '../../../hooks/useDhis2PeriodSettings';
+import { fetchPredictionPeriods } from '../utils/fetchPredictionPeriods';
+
+type Props = {
+    predictionSetupId: number;
+    periodSettings: Dhis2PeriodSettings;
+    returnTo?: string;
+    onSuccess?: () => void;
+    onError?: (error: ApiError) => void;
+};
+
+export const useCreatePrediction = ({
+    predictionSetupId,
+    periodSettings,
+    returnTo,
+    onSuccess,
+    onError,
+}: Props) => {
+    const chapClient = useChapClient();
+    const dataEngine = useDataEngine();
+    const queryClient = useQueryClient();
+    const navigate = useNavigate();
+    const [dataHash, setDataHash] = useState<string>();
+
+    const {
+        mutate: createPrediction,
+        isLoading,
+        error,
+    } = useMutation<JobResponse, ApiError, ModelExecutionFormValues>({
+        mutationFn: async (formData: ModelExecutionFormValues) => {
+            setDataHash(undefined);
+            const nPeriods = await fetchPredictionPeriods(predictionSetupId, formData.periodType, chapClient);
+
+            const { observations, orgUnitResponse, hash } = await prepareBacktestData(
+                formData,
+                dataEngine,
+                queryClient,
+                periodSettings,
+                chapClient,
+            );
+
+            setDataHash(hash);
+
+            const geojson: FeatureCollectionModel = buildOrgUnitFeatureCollection(
+                orgUnitResponse.geojson.organisationUnits,
+            );
+
+            const predictionRequest: RunPredictionSetupRequest = {
+                name: formData.name,
+                geojson,
+                providedData: observations,
+                nPeriods,
+                type: 'prediction',
+            };
+
+            return chapClient.predictionSetups.runPredictionSetupV1CrudPredictionSetupsPredictionSetupIdRunPost(
+                predictionSetupId,
+                predictionRequest,
+            );
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['jobs'] });
+            queryClient.invalidateQueries({ queryKey: ['predictions'] });
+            queryClient.invalidateQueries({ queryKey: ['predictionSetups'] });
+            onSuccess?.();
+            navigate(returnTo || '/jobs');
+        },
+        onError: (apiError: ApiError) => {
+            onError?.(apiError);
+        },
+    });
+
+    return {
+        createPrediction,
+        importSummary: error ? getImportSummaryFromApiError(error, dataHash) : null,
+        isSubmitting: isLoading,
+        error,
+    };
+};

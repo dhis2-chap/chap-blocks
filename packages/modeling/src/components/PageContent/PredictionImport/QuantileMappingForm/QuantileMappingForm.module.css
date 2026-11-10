@@ -1,0 +1,248 @@
+.customNoticeBox {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacers-dp12);
+    padding: var(--spacers-dp16);
+    border: 0.5px solid var(--colors-grey400);
+    border-radius: 4px;
+    background-color: var(--colors-grey100);
+    margin-block-start: var(--spacers-dp16);
+}
+
+.customNoticeBox>span:first-child {
+    display: flex;
+    align-items: center;
+    color: var(--colors-grey600);
+}
+
+.customNoticeBox .title {
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--colors-grey900);
+}
+
+.customNoticeBox .description {
+    font-size: 14px;
+    color: var(--colors-grey700);
+}
+
+.dataItemSelects {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacers-dp8);
+    max-inline-size: 80%;
+    margin: auto;
+    margin-block-start: var(--spacers-dp16);
+}
+
+.loadingContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-block-size: 200px;
+}
+
+.alertSummary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacers-dp12);
+    padding: var(--spacers-dp12) var(--spacers-dp16);
+    border: 1px solid var(--colors-grey300);
+    border-radius: 4px;
+    margin-block-start: var(--spacers-dp16);
+}
+
+.alertSummary>div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.summaryLabel {
+    color: var(--colors-grey700);
+    font-size: 13px;
+}
+
+.summaryValue {
+    color: var(--colors-grey900);
+    font-weight: 600;
+}
+
+.tertiaryActionButton {
+    align-self: center;
+    margin-inline-start: auto;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--colors-grey900);
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    padding: 4px 6px;
+}
+
+.tertiaryActionButton:hover,
+.tertiaryActionButton:focus {
+    background-color: var(--colors-grey100);
+    color: var(--colors-grey900);
+}
+
+.tertiaryActionButton:focus {
+    outline: 2px solid var(--colors-grey500);
+    outline-offset: 1px;
+}
+
+.alertOutput {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacers-dp12);
+    margin-block-start: var(--spacers-dp16);
+    padding-block-start: var(--spacers-dp16);
+    border-block-start: 1px solid var(--colors-grey300);
+}
+
+.alertOutput h3 {
+    margin: 0;
+    color: var(--colors-grey900);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.outbreakIndicatorField {
+    margin-block-start: var(--spacers-dp8);
+}
+
+.alertOutputToggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacers-dp16);
+    padding: var(--spacers-dp12) var(--spacers-dp16);
+    border: 1px solid var(--colors-grey300);
+    border-radius: 4px;
+    background-color: var(--colors-grey050);
+    cursor: pointer;
+}
+
+.alertOutputToggle:hover {
+    background-color: var(--colors-grey100);
+}
+
+.alertOutputToggleText {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.alertOutputToggleTitle {
+    color: var(--colors-grey900);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.alertOutputToggleDescription {
+    color: var(--colors-grey700);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.clearPreviousValues {
+    display: flex;
+    align-items: center;
+    margin-block-start: var(--spacers-dp16);
+    padding-block-start: var(--spacers-dp16);
+    border-block-start: 1px solid var(--colors-grey300);
+}
+
+.clearPreviousValuesTooltipTarget {
+    display: inline-flex;
+}
+
+.buttonStrip {
+    margin-block-start: var(--spacers-dp8);
+}
+
+.importProgressList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacers-dp8);
+    margin: var(--spacers-dp16) 0 0;
+    padding: var(--spacers-dp12) 0 0;
+    border-block-start: 1px solid var(--colors-grey300);
+    list-style: none;
+}
+
+.importProgressStep {
+    display: grid;
+    grid-template-columns: 18px 1fr;
+    align-items: center;
+    gap: var(--spacers-dp8);
+    color: var(--colors-grey700);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.importProgressStep[data-status="active"] {
+    color: var(--colors-grey900);
+    font-weight: 500;
+}
+
+.importProgressStep[data-status="complete"] {
+    color: var(--colors-grey800);
+}
+
+.importProgressStep[data-status="failed"] {
+    color: var(--colors-red700);
+    font-weight: 500;
+}
+
+.importProgressIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 18px;
+    block-size: 18px;
+    color: var(--colors-grey500);
+}
+
+.importProgressStep[data-status="active"] .importProgressIcon {
+    color: var(--colors-blue700);
+}
+
+.importProgressStep[data-status="complete"] .importProgressIcon {
+    color: var(--colors-green600);
+}
+
+.importProgressStep[data-status="failed"] .importProgressIcon {
+    color: var(--colors-red700);
+}
+
+.importProgressWaitingDot {
+    display: block;
+    inline-size: 6px;
+    block-size: 6px;
+    border-radius: 50%;
+    background-color: var(--colors-grey400);
+}
+
+.importProgressSpinner {
+    box-sizing: border-box;
+    display: block;
+    inline-size: 12px;
+    block-size: 12px;
+    border: 2px solid var(--colors-blue200);
+    border-block-start-color: var(--colors-blue700);
+    border-radius: 50%;
+    animation: importProgressSpin 0.75s linear infinite;
+}
+
+@keyframes importProgressSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}

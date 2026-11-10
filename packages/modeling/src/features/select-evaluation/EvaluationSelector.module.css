@@ -1,0 +1,34 @@
+
+.selector {
+    flex-grow: 1;
+}
+
+/* Let long evaluation names wrap instead of pushing out the clear/arrow buttons */
+.selectorWrapper :global(.root-input),
+.selectorWrapper :global(.root-children) {
+    min-inline-size: 0;
+}
+
+.selectorWrapper {
+    inline-size: 100%;
+}
+
+.messageWrapper {
+    padding: var(--spacers-dp8);
+    font-size: 14px;
+}
+
+.evaluationOption span {
+    font-size: 14px;
+    color: var(--colors-grey600); 
+
+}
+
+:global(.active) .evaluationOption span {
+    color: var(--colors-grey400)
+}
+
+/* Names like "model/auto_regressive_monthly" have no spaces to wrap on */
+.selector :global(.root-input > .root) {
+    overflow-wrap: anywhere;
+}

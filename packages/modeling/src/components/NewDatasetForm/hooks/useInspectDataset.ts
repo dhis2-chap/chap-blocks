@@ -1,0 +1,40 @@
+import { useChapClient } from '@chap-blocks/runtime';
+import { useMutation } from '@tanstack/react-query';
+import { useDataEngine } from '@chap-blocks/runtime';
+import { ApiError } from '@chap-blocks/api';
+import { prepareDataset } from '../utils/prepareDataset';
+import type { ImportSummaryCorrected } from '../../ModelExecutionForm/types';
+import type { InputCompletenessData } from '../../InputCompleteness/InputCompletenessView';
+import { getInputVariables } from '../../InputCompleteness/inputCompleteness';
+import { type DatasetFormValues } from './useDatasetFormState';
+import { type DatasetImportSummary } from './useCreateDataset';
+import { type Dhis2PeriodSettings } from '../../../hooks/useDhis2PeriodSettings';
+
+export type DatasetInspection = DatasetImportSummary & { completeness: InputCompletenessData };
+
+/** Fetches the dataset from DHIS2 and has Chap validate it in a dry run, without saving anything. */
+export const useInspectDataset = (periodSettings: Dhis2PeriodSettings) => {
+    const chapClient = useChapClient();
+    const dataEngine = useDataEngine();
+
+    return useMutation<DatasetInspection, Error | ApiError, DatasetFormValues>({
+        mutationFn: async (formData) => {
+            const { request, orgUnitNames, periods } = await prepareDataset(formData, dataEngine, periodSettings);
+            const response = await chapClient.datasets.makeDatasetV1AnalyticsMakeDatasetPost(request, true);
+            return {
+                ...(response as unknown as ImportSummaryCorrected),
+                orgUnitNames,
+                completeness: {
+                    observations: request.providedData,
+                    periods,
+                    // Every selected location, so ones without any data count as gaps.
+                    orgUnits: [...orgUnitNames.keys()],
+                    variables: getInputVariables(
+                        request.targetColumn ?? 'disease_cases',
+                        request.dataSources?.map(source => source.covariate),
+                    ),
+                },
+            };
+        },
+    });
+};

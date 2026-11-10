@@ -1,0 +1,77 @@
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+}
+
+.successNotice {
+  margin-block-end: 1rem;
+}
+
+.filtersContainer {
+  display: flex;
+  gap: 6px;
+  padding: 1rem 0;
+  border-block-start: 1px solid var(--colors-grey300);
+}
+
+.filtersContainer > * {
+  flex: 1;
+  min-inline-size: 200px;
+}
+
+.tableContainer {
+  min-block-size: 200px;
+  max-block-size: 400px;
+  overflow-y: auto;
+}
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--colors-grey700);
+  font-style: italic;
+}
+
+.summaryStats {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem;
+  background-color: var(--colors-grey050);
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.statValue {
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.statLabel {
+  color: var(--colors-grey700);
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+.periodDetails summary {
+  cursor: pointer;
+}
+
+.periodDetails > div {
+  max-inline-size: 30rem;
+  max-block-size: 12rem;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  margin-block-start: var(--spacers-dp8);
+  white-space: normal;
+}

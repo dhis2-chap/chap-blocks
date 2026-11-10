@@ -1,0 +1,309 @@
+/* generated using openapi-typescript-codegen -- do not edit */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { Body_create_dataset_csv_v1_crud_datasets_csvFile_post } from '../models/Body_create_dataset_csv_v1_crud_datasets_csvFile_post';
+import type { chap_core__rest_api__data_models__DataBaseResponse } from '../models/chap_core__rest_api__data_models__DataBaseResponse';
+import type { ChapDataSource } from '../models/ChapDataSource';
+import type { CovariateNameSuggestion } from '../models/CovariateNameSuggestion';
+import type { DatasetCreate } from '../models/DatasetCreate';
+import type { DataSetInfo } from '../models/DataSetInfo';
+import type { DatasetMakeRequest } from '../models/DatasetMakeRequest';
+import type { DataSetWithObservations } from '../models/DataSetWithObservations';
+import type { ImportSummaryResponse } from '../models/ImportSummaryResponse';
+import type { JobResponse } from '../models/JobResponse';
+import type { ThresholdRequest } from '../models/ThresholdRequest';
+import type { ThresholdResponse } from '../models/ThresholdResponse';
+import type { ThresholdStrategyInfo } from '../models/ThresholdStrategyInfo';
+import type { CancelablePromise } from '../core/CancelablePromise';
+import type { BaseHttpRequest } from '../core/BaseHttpRequest';
+export class DatasetsService {
+    constructor(public readonly httpRequest: BaseHttpRequest) {}
+    /**
+     * Browse imported datasets
+     * List every imported dataset so you can pick one to back a backtest, run a prediction, or inspect its contents — metadata only, no observations inline.
+     * @returns DataSetInfo Successful Response
+     * @throws ApiError
+     */
+    public getDatasetsV1CrudDatasetsGet(): CancelablePromise<Array<DataSetInfo>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/v1/crud/datasets',
+        });
+    }
+    /**
+     * Import a health-only dataset
+     * Import a dataset that carries just disease cases and population (no climate covariates inline), with polygons attached.
+     *
+     * Climate or other covariates are layered on later by the modelling pipeline.
+     * Importing runs in the background; you get a job id and poll ``/v1/jobs/{id}``
+     * (or ``/v1/jobs/{id}/database_result`` once finished) for the resulting dataset id.
+     * For a dataset that ships its own covariates, use ``POST /v1/analytics/make-dataset``
+     * instead.
+     *
+     * ``maskedRanges`` deletes data: ``disease_cases`` inside the ranges is stored as empty
+     * and the submitted values are not kept. They cannot be recovered or unmasked later.
+     * ``targetColumn`` must be one of the kept fields and present in the observations.
+     * @param requestBody
+     * @returns JobResponse Successful Response
+     * @throws ApiError
+     */
+    public createDatasetV1CrudDatasetsPost(
+        requestBody: DatasetCreate,
+    ): CancelablePromise<JobResponse> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/v1/crud/datasets',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Inspect a dataset's observations
+     * Load a dataset together with every observation it contains, so you can audit what was imported or re-export it.
+     *
+     * NaN/inf values are coerced to JSON ``null`` so the response is always parseable.
+     * Heavier than the listing — for casual browsing, prefer ``/datasets``. 404 if the id
+     * is unknown.
+     * @param datasetId
+     * @returns DataSetWithObservations Successful Response
+     * @throws ApiError
+     */
+    public getDatasetV1CrudDatasetsDatasetIdGet(
+        datasetId: number,
+    ): CancelablePromise<DataSetWithObservations> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/v1/crud/datasets/{datasetId}',
+            path: {
+                'datasetId': datasetId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Remove an imported dataset
+     * Permanently delete a dataset and every observation in it. Use this to clean up obsolete imports.
+     *
+     * Refused with 409 while a backtest or a prediction still uses the dataset. The baseline
+     * backtests that every backtest queues count too, although backtest listings hide them,
+     * so the error names every backtest and prediction to delete first. 404 if the id is unknown.
+     * @param datasetId
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public deleteDatasetV1CrudDatasetsDatasetIdDelete(
+        datasetId: number,
+    ): CancelablePromise<any> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/v1/crud/datasets/{datasetId}',
+            path: {
+                'datasetId': datasetId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Import a dataset from a CSV + geojson upload
+     * Upload a CSV of observations together with the matching GeoJSON polygons (``NAME_1`` keyed) and persist it as a dataset synchronously.
+     *
+     * Use this when you have the files on disk and do not want to round-trip them
+     * through DHIS2 or the JSON import endpoints. Inserts inline — no background job —
+     * and returns the new dataset id immediately. The dataset has no masked ranges;
+     * a CSV with a ``target_masked`` column gets a 422. Every numeric column besides
+     * ``time_period`` and ``location`` is stored; text columns such as ``parent`` are ignored.
+     * The optional ``targetColumn`` form field selects the target (default ``disease_cases``)
+     * and must name a stored column.
+     * @param formData
+     * @returns chap_core__rest_api__data_models__DataBaseResponse Successful Response
+     * @throws ApiError
+     */
+    public createDatasetCsvV1CrudDatasetsCsvFilePost(
+        formData: Body_create_dataset_csv_v1_crud_datasets_csvFile_post,
+    ): CancelablePromise<chap_core__rest_api__data_models__DataBaseResponse> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/v1/crud/datasets/csvFile',
+            formData: formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Read a dataset as tabular JSON rows
+     * Get a dataset shaped as a list of JSON rows (one row per region and time period), in the form pandas, Observable, or any tabular tool can consume directly.
+     *
+     * Use this when a UI needs to render the dataset as a table, or when a notebook
+     * consumer wants to drop the result into ``pd.DataFrame``. Non-finite values come
+     * through as JSON ``null``. 404 if the dataset id is unknown.
+     * @param datasetId
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public getDatasetDfV1CrudDatasetsDatasetIdDfGet(
+        datasetId: number,
+    ): CancelablePromise<any> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/v1/crud/datasets/{datasetId}/df',
+            path: {
+                'datasetId': datasetId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Export a dataset as a CSV download
+     * Download a dataset as a CSV file — one row per region and time period.
+     *
+     * Use this when a user wants to pull the imported data out for use in Excel, R,
+     * pandas, or any other offline tool. 404 if the dataset id is unknown.
+     * @param datasetId
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public getDatasetCsvV1CrudDatasetsDatasetIdCsvGet(
+        datasetId: number,
+    ): CancelablePromise<any> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/v1/crud/datasets/{datasetId}/csv',
+            path: {
+                'datasetId': datasetId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Import observations as a reusable dataset
+     * Persist observations (with polygons) as a named dataset you can reuse across backtests and predictions.
+     *
+     * Use this to turn a one-off batch of DHIS2 / file-based observations into something
+     * stored, so a single dataset can back multiple evaluations. Import happens in the
+     * background — the response gives you a job id plus a per-location rejection summary
+     * (validation runs synchronously, the harmonise-and-load step async). Poll
+     * ``/v1/jobs/{id}`` to know when the dataset is queryable. Pass ``dryRun=true`` to run
+     * validation only and get the rejection summary without queuing an import.
+     *
+     * ``targetColumn`` selects the column to predict (default ``disease_cases``). It is
+     * saved with the dataset and reused by its runs; a different target needs a new dataset.
+     *
+     * ``maskedRanges`` deletes data: ``disease_cases`` inside the ranges is stored as empty
+     * and the submitted values are not kept. They cannot be recovered or unmasked later.
+     * @param requestBody
+     * @param dryRun If True, only run validation and do not import the dataset
+     * @returns ImportSummaryResponse Successful Response
+     * @throws ApiError
+     */
+    public makeDatasetV1AnalyticsMakeDatasetPost(
+        requestBody: DatasetMakeRequest,
+        dryRun: boolean = false,
+    ): CancelablePromise<ImportSummaryResponse> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/v1/analytics/make-dataset',
+            query: {
+                'dryRun': dryRun,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Discover which external data sources can feed a dataset
+     * List the external covariate sources CHAP knows about (ERA5 temperature, precipitation, ...) and the dataset features each one maps to.
+     *
+     * Use this to power a data-source picker when authoring a dataset or a prediction
+     * setup, so users can pick covariates by what they cover rather than by their internal
+     * identifier.
+     * @returns ChapDataSource Successful Response
+     * @throws ApiError
+     */
+    public getDataSourcesV1AnalyticsDataSourcesGet(): CancelablePromise<Array<ChapDataSource>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/v1/analytics/data-sources',
+        });
+    }
+    /**
+     * Suggest covariate names for a model-independent dataset
+     * List covariate names to offer when naming the columns of a dataset that is not tied to a model.
+     *
+     * Models only run on a dataset whose covariate names match the names they ask for
+     * verbatim, so picking a suggested name is what makes a dataset reusable across models.
+     * The list is the union of three sources: CHAP's standard names; for every live model
+     * template, its required covariates plus the name of its target column (usually
+     * ``disease_cases``, but a template may call it something else); and for every live
+     * configured model, the extra continuous covariates its configuration adds on top of the
+     * template. ``requiredBy`` names the templates and configured models that need each
+     * name. Free-text names are still allowed when creating a dataset.
+     * @returns CovariateNameSuggestion Successful Response
+     * @throws ApiError
+     */
+    public getCovariateNamesV1AnalyticsCovariateNamesGet(): CancelablePromise<Array<CovariateNameSuggestion>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/v1/analytics/covariate-names',
+        });
+    }
+    /**
+     * Discover which threshold strategies are available
+     * List the registered threshold strategies (seasonal mean + k*std, ...), with a name and description for each.
+     *
+     * Use this to populate a strategy picker before requesting a specific threshold via
+     * `POST /v1/analytics/thresholds`.
+     * @returns ThresholdStrategyInfo Successful Response
+     * @throws ApiError
+     */
+    public listThresholdStrategyTypesV1AnalyticsThresholdsStrategiesGet(): CancelablePromise<Array<ThresholdStrategyInfo>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/v1/analytics/thresholds/strategies',
+        });
+    }
+    /**
+     * Compute thresholds (endemic channel) for a dataset
+     * Compute outbreak threshold lines per (period, org unit) from a dataset's historical target values.
+     *
+     * The `type` field of `params` selects the strategy; the strategy's line parameter
+     * (`quantile`, `stdMultiplier`, ...) accepts a scalar or a list, and each entry's `values`
+     * array holds one threshold per requested line, in the order of `lines`. Every requested
+     * (period, location) gets an entry; cells no threshold could be computed for are `null`.
+     * 404 if the dataset has
+     * no target observations. 400 if the requested periods do not match the dataset's
+     * frequency, or if the dataset has no complete year to compute a baseline from.
+     * @param requestBody
+     * @returns ThresholdResponse Successful Response
+     * @throws ApiError
+     */
+    public computeThresholdsV1AnalyticsThresholdsPost(
+        requestBody: ThresholdRequest,
+    ): CancelablePromise<ThresholdResponse> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/v1/analytics/thresholds',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+}

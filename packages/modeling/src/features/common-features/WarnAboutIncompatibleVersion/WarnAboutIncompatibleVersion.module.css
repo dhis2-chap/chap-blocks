@@ -1,0 +1,12 @@
+.warningMargin {
+    /*margin-block-start: 24px;*/
+    margin: 0 auto;
+}
+
+.warningMarginInner {
+    margin-block: 10px;
+}
+
+.resultDescription {
+    margin: 0;
+}

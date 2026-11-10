@@ -1,0 +1,18 @@
+{
+  "version": "0.1.0",
+  "type": "module",
+  "license": "SEE LICENSE IN LICENSE",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "src",
+    "LICENSE",
+    "UPSTREAM.md",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "name": "@chap-blocks/api"
+}

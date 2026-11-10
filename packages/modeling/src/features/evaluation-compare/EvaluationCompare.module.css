@@ -1,0 +1,151 @@
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacers-dp8);
+    margin-block-end: 72px;
+}
+
+
+.loaderWrapper {
+    z-index: 1;
+    position: relative;
+    align-self: center;
+    /* counteract gap in selectionToolbar */
+    margin-block-start: -8px;
+    inset-block-start: 38px;
+}
+
+.loader {
+    position: absolute;
+}
+
+.stickyBar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacers-dp24);
+    padding: var(--spacers-dp8);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: transparent;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stuck {
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.selectorRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--spacers-dp8);
+    flex: 1 1 560px;
+    min-inline-size: 0;
+}
+
+/* Selectors wrap onto their own lines when there is not room for them side by side */
+.selectorRow > * {
+    flex: 3 1 280px;
+    min-inline-size: 0;
+}
+
+/* Location select only shows "N selected", give the evaluations the space */
+.selectorRow > :last-child {
+    flex: 1 1 220px;
+}
+
+.zoomButtons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex: none;
+    margin-inline-start: auto;
+}
+
+.selectionToolbar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacers-dp8);
+    inline-size: 100%;
+}
+
+
+.emptySelection {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    block-size: 100%;
+    gap: var(--spacers-dp16);
+    padding-block-start: var(--spacers-dp16);
+}
+
+.emptySelection h2 {
+    font-size: 20px;
+    line-height: 24px;
+    color: var(--colors-grey800);
+    margin: 0;
+    font-weight: 500;
+}
+
+.iconGroup {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacers-dp8);
+    padding: var(--spacers-dp8);
+    color: var(--colors-grey800);
+}
+
+.arrowIcons {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.arrowIcons svg:first-child {
+    margin-block-end: -8px;
+    margin-inline-start: 2px;
+}
+
+.iconGroup > svg {
+    inline-size: 32px;
+    block-size: 32px;
+}
+
+.textGroup {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacers-dp4);
+}
+
+.textGroup p {
+    color: var(--colors-grey800);
+    font-size: 14px;
+    margin: 0;
+    margin-block-start: var(--spacers-dp4);
+}
+
+
+.footerSlider {
+    position: fixed;
+    z-index: 1;
+    inset-block-end: 0;
+    margin-block-end: var(--spacers-dp16);
+    inline-size: 50%;
+    min-inline-size: 350px;
+    display: flex;
+    align-self: center;
+    border-radius: 10px;
+    background-color: var(--colors-white);
+    padding: var(--spacers-dp4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}

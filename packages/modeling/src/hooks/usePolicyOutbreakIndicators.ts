@@ -1,0 +1,50 @@
+import { useChapClient } from '@chap-blocks/runtime';
+import { useMemo } from 'react';
+import i18n from '@dhis2/d2-i18n';
+import { useQuery } from '@tanstack/react-query';
+import { canonicalizePeriodId } from '@chap-blocks/core';
+import { type AlertPolicyRead, type ApiError, type PredictionEntry, type ThresholdResponse } from '@chap-blocks/api';
+import { type PredictionOrgUnitSeries } from '@chap-blocks/ui';
+import { buildPolicyOutbreakIndicators, getAlertLevelQuantile } from '../components/PageContent/PredictionImport/utils/policyOutbreakIndicators';
+import { getThresholdQueryState } from '../utils/thresholdQueryState';
+
+export const usePolicyOutbreakIndicators = ({ predictionId, datasetId, policy, series, enabled }: {
+    predictionId: number;
+    datasetId: number;
+    policy?: AlertPolicyRead | null;
+    series: PredictionOrgUnitSeries[];
+    enabled: boolean;
+}) => {
+    const chapClient = useChapClient();
+    const periodIds = [...new Set(series.flatMap(region => region.points.map(point => canonicalizePeriodId(point.period))))];
+    const locations = series.map(region => region.orgUnitId);
+    const isQueryEnabled = enabled && !!policy;
+    const results = useQuery<{ entries: PredictionEntry[]; thresholds: ThresholdResponse[] }, ApiError>({
+        queryKey: ['policy-outbreak-indicators', predictionId, datasetId, policy, periodIds, locations],
+        enabled: isQueryEnabled,
+        staleTime: Infinity,
+        retry: 0,
+        queryFn: async () => {
+            if (!policy?.levels?.length) throw new Error(i18n.t('The signal policy has no levels'));
+            const [entries, thresholds] = await Promise.all([
+                chapClient.predictions.getPredictionEntriesV1AnalyticsPredictionEntryPredictionIdGet(
+                    predictionId, [...new Set(policy.levels.map(getAlertLevelQuantile))],
+                ),
+                Promise.all(policy.levels.map(level => chapClient.datasets.computeThresholdsV1AnalyticsThresholdsPost({
+                    datasetId, periodIds, locations, params: level.thresholdParams,
+                }))),
+            ]);
+            return { entries, thresholds };
+        },
+    });
+    const indicators = useMemo(() => policy && results.data
+        ? buildPolicyOutbreakIndicators(series, policy, results.data.entries, results.data.thresholds)
+        : [], [series, policy, results.data]);
+    return {
+        indicators,
+        ...getThresholdQueryState(isQueryEnabled, results),
+        error: isQueryEnabled ? results.error : null,
+        retry: () => void results.refetch(),
+        skippedCount: series.reduce((count, region) => count + region.points.length, 0) - indicators.length,
+    };
+};

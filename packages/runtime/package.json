@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "type": "module",
+  "license": "SEE LICENSE IN LICENSE",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "src",
+    "LICENSE",
+    "UPSTREAM.md",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "name": "@chap-blocks/runtime",
+  "dependencies": {
+    "@chap-blocks/api": "workspace:*",
+    "@tanstack/react-query": "^4.42.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

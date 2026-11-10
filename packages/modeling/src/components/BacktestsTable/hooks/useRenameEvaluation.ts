@@ -1,0 +1,54 @@
+import { useChapClient } from '@chap-blocks/runtime';
+import { ApiError, BacktestRead } from '@chap-blocks/api';
+import { useAlert } from '@chap-blocks/runtime';
+import i18n from '@dhis2/d2-i18n';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+type Props = {
+    onSuccess?: () => void;
+    onError?: () => void;
+};
+
+type Variables = {
+    id: number;
+    name: string;
+};
+
+export const useRenameEvaluation = ({ onSuccess, onError }: Props = {}) => {
+    const chapClient = useChapClient();
+    const queryClient = useQueryClient();
+
+    const { show: showErrorAlert } = useAlert(
+        i18n.t('Error renaming evaluation'),
+        { critical: true },
+    );
+
+    const {
+        mutate: renameEvaluation,
+        isLoading,
+        error,
+    } = useMutation<BacktestRead, ApiError, Variables, unknown>(
+        ({ id, name }: Variables) => chapClient.backtests.updateBacktestV1CrudBacktestsBacktestIdPatch(id, { name }),
+        {
+            onSuccess: (data: BacktestRead, variables: Variables) => {
+                queryClient.setQueryData<BacktestRead[]>(['backtests'], oldData =>
+                    oldData?.map(backtest =>
+                        backtest.id === variables.id ? { ...backtest, name: variables.name } : backtest,
+                    ),
+                );
+                onSuccess?.();
+            },
+            onError: (error) => {
+                showErrorAlert();
+                console.error('There was an error renaming the evaluation', error);
+                onError?.();
+            },
+        },
+    );
+
+    return {
+        renameEvaluation,
+        isSubmitting: isLoading,
+        error,
+    };
+};

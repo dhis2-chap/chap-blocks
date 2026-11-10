@@ -1,0 +1,155 @@
+import { useState } from 'react';
+import {
+    FlyoutMenu,
+    MenuItem,
+    IconDelete16,
+    IconEdit16,
+    IconMore16,
+    IconDuplicate16,
+    IconVisualizationLineMulti16,
+    IconDownload16,
+    IconView16,
+} from '@dhis2/ui';
+import i18n from '@dhis2/d2-i18n';
+import { OverflowButton } from '@chap-blocks/ui';
+import { EditBacktestModal } from './EditBacktestModal';
+import { DeleteBacktestModal } from './DeleteBacktestModal/DeleteBacktestModal';
+import { CopyBacktestModal } from './CopyBacktestModal';
+import { DownloadModal } from './DownloadModal';
+import { useNavigate } from 'react-router-dom';
+import { useIsFeatureAvailable, Features } from '../../../hooks/useIsFeatureAvailable';
+
+type Props = {
+    id: number;
+    name: string | null | undefined;
+    datasetId: number;
+    onRename?: () => void;
+    onDelete?: () => void;
+};
+
+export const BacktestActionsMenu = ({
+    id,
+    name,
+    datasetId,
+}: Props) => {
+    const navigate = useNavigate();
+    const { isAvailable: isDatasetDownloadAvailable } = useIsFeatureAvailable(Features.DATASET_DOWNLOAD);
+    const { isAvailable: isMetricsDownloadAvailable } = useIsFeatureAvailable(Features.METRICS_DOWNLOAD);
+    const isDownloadAvailable = isDatasetDownloadAvailable || isMetricsDownloadAvailable;
+    const [flyoutMenuIsOpen, setFlyoutMenuIsOpen] = useState(false);
+    const [deleteModalIsOpen, setDeleteModalIsOpen] = useState(false);
+    const [editModalIsOpen, setEditModalIsOpen] = useState(false);
+    const [copyModalIsOpen, setCopyModalIsOpen] = useState(false);
+    const [downloadModalIsOpen, setDownloadModalIsOpen] = useState(false);
+
+    const handleCompare = () => {
+        navigate(`/evaluate/compare?baseEvaluation=${id}&returnTo=${encodeURIComponent('/evaluate')}`);
+    };
+
+    return (
+        <>
+            <OverflowButton
+                small
+                open={flyoutMenuIsOpen}
+                icon={<IconMore16 />}
+                onClick={() => {
+                    setFlyoutMenuIsOpen(prev => !prev);
+                }}
+                component={(
+                    <FlyoutMenu dense>
+                        <MenuItem
+                            label={i18n.t('View')}
+                            dataTest="backtest-overflow-view"
+                            icon={<IconView16 />}
+                            onClick={() => {
+                                navigate(`/evaluate/${id}`);
+                                setFlyoutMenuIsOpen(false);
+                            }}
+                        />
+                        <MenuItem
+                            label={i18n.t('Create new...')}
+                            dataTest="backtest-overflow-copy"
+                            icon={<IconDuplicate16 />}
+                            onClick={() => {
+                                setCopyModalIsOpen(true);
+                                setFlyoutMenuIsOpen(false);
+                            }}
+                        />
+                        <MenuItem
+                            label={i18n.t('Compare')}
+                            dataTest="backtest-overflow-compare"
+                            icon={<IconVisualizationLineMulti16 />}
+                            onClick={() => {
+                                handleCompare();
+                                setFlyoutMenuIsOpen(false);
+                            }}
+                        />
+                        <MenuItem
+                            label={i18n.t('Rename')}
+                            dataTest="backtest-overflow-rename"
+                            icon={<IconEdit16 />}
+                            onClick={() => {
+                                setEditModalIsOpen(true);
+                                setFlyoutMenuIsOpen(false);
+                            }}
+                        />
+                        {isDownloadAvailable && (
+                            <MenuItem
+                                label={i18n.t('Download')}
+                                dataTest="backtest-overflow-download"
+                                icon={<IconDownload16 />}
+                                onClick={() => {
+                                    setDownloadModalIsOpen(true);
+                                    setFlyoutMenuIsOpen(false);
+                                }}
+                            />
+                        )}
+                        <MenuItem
+                            label={i18n.t('Delete')}
+                            dataTest="backtest-overflow-delete"
+                            destructive
+                            icon={<IconDelete16 />}
+                            onClick={() => {
+                                setDeleteModalIsOpen(true);
+                                setFlyoutMenuIsOpen(false);
+                            }}
+                        />
+                    </FlyoutMenu>
+                )}
+            />
+
+            {editModalIsOpen && (
+                <EditBacktestModal
+                    id={id}
+                    initialName={name ?? ''}
+                    onClose={() => setEditModalIsOpen(false)}
+                />
+            )}
+
+            {copyModalIsOpen && (
+                <CopyBacktestModal
+                    id={id}
+                    onClose={() => setCopyModalIsOpen(false)}
+                />
+            )}
+
+            {deleteModalIsOpen && (
+                <DeleteBacktestModal
+                    id={id}
+                    onClose={() => setDeleteModalIsOpen(false)}
+                />
+            )}
+
+            {downloadModalIsOpen && isDownloadAvailable && (
+                <DownloadModal
+                    backtestId={id}
+                    backtestName={name}
+                    datasetId={datasetId}
+                    isDatasetDownloadAvailable={isDatasetDownloadAvailable}
+                    isMetricsDownloadAvailable={isMetricsDownloadAvailable}
+                    onClose={() => setDownloadModalIsOpen(false)}
+                />
+            )}
+        </>
+    );
+};

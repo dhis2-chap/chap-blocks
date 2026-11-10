@@ -1,0 +1,40 @@
+import { useChapClient } from '@chap-blocks/runtime';
+import { ApiError, BacktestParameterInfo } from '@chap-blocks/api';
+import { useRoute } from '@chap-blocks/runtime';
+import { useQuery } from '@tanstack/react-query';
+import { Features, useIsFeatureAvailable } from './useIsFeatureAvailable';
+import { useWeatherProviders } from './useWeatherProviders';
+import { parseSupportedPeriodType, SUPPORTED_PERIOD_TYPES } from '../utils/supportedPeriodType';
+
+/** Chap Core stores separate weekly and monthly defaults, and falls back to monthly for anything else. */
+const toParameterPeriodType = (periodType: string | null | undefined) => (
+    parseSupportedPeriodType(periodType) === SUPPORTED_PERIOD_TYPES.WEEK ? 'week' : 'month'
+);
+
+/** Older Chap Core versions apply their own defaults, so the form leaves the parameters out. */
+export const useBacktestParameters = (periodType?: string | null) => {
+    const chapClient = useChapClient();
+    const { route } = useRoute();
+    const { isAvailable } = useIsFeatureAvailable(Features.BACKTEST_PARAMETERS);
+    const parameterPeriodType = toParameterPeriodType(periodType);
+    const query = useQuery<BacktestParameterInfo[], ApiError>({
+        queryKey: ['backtest-parameters', route?.url, parameterPeriodType],
+        queryFn: () => chapClient.backtests.listBacktestParametersV1AnalyticsBacktestParametersGet(parameterPeriodType),
+        staleTime: Infinity,
+        keepPreviousData: true,
+        retry: false,
+        enabled: isAvailable,
+    });
+    return { ...query, isAvailable };
+};
+
+/** Stored backtest parameters, labelled by Chap Core. */
+export const useBacktestParameterValues = (values: Record<string, unknown>) => {
+    const { data: parameters } = useBacktestParameters();
+    const { data: providers } = useWeatherProviders();
+    return (parameters ?? []).map(({ name, label }) => {
+        const value = values[name] as string | number | null | undefined;
+        const provider = name === 'futureWeatherProvider' ? providers?.find(item => item.id === value) : undefined;
+        return { label, value: provider?.displayName ?? value };
+    });
+};

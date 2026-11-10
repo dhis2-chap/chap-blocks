@@ -1,0 +1,18 @@
+.loadingContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    block-size: 200px;
+}
+
+.errorContainer {
+    padding: 16px;
+}
+
+.container {
+    margin: 16px 0;
+}
+
+.backButton {
+    margin-block-end: 20px;
+}

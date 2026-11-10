@@ -1,0 +1,153 @@
+import i18n from '@dhis2/d2-i18n';
+import { IconChevronLeft24 } from '@dhis2/ui';
+import { IconMessages16 } from '@dhis2/ui-icons';
+import cx from 'classnames';
+import { useEffect, useRef, useState } from 'react';
+import { NavLink } from 'react-router-dom';
+import styles from './Sidebar.module.css';
+import { Sidenav, SidenavButton, SidenavFooter, SidenavItems, SidenavLink, SidenavParent } from '@chap-blocks/ui';
+import { ReportBugDialog } from '../../features/common-features/ReportBugDialog/ReportBugDialog';
+import { Features, useIsFeatureAvailable } from '../../hooks/useIsFeatureAvailable';
+
+type LinkItem = {
+    to: string;
+    label: string;
+};
+interface SidebarNavLinkProps {
+    label: string;
+    to: string;
+    disabled?: boolean;
+    end?: boolean;
+}
+
+const SidebarNavLink = ({ to, label, disabled, end }: SidebarNavLinkProps) => {
+    return (
+        <SidenavLink
+            to={to}
+            disabled={disabled}
+            LinkComponent={NavLink}
+            label={label}
+            end={end}
+        />
+    );
+};
+
+interface SidebarParentProps {
+    initiallyOpen?: boolean;
+    label: string;
+    links: LinkItem[];
+}
+
+const SidebarParent = ({
+    label,
+    links = [],
+    initiallyOpen = true,
+}: SidebarParentProps) => {
+    const [isOpen, setIsOpen] = useState(initiallyOpen);
+
+    const handleOpen = () => {
+        setIsOpen(!isOpen);
+    };
+
+    if (links.length === 1) {
+        return <SidebarNavLink to={links[0].to} label={links[0].label} end />;
+    }
+
+    return (
+        <SidenavParent label={label} open={isOpen} onClick={handleOpen}>
+            {links.map(({ to, label }) => (
+                <SidebarNavLink key={label} to={to} label={label} end />
+            ))}
+        </SidenavParent>
+    );
+};
+
+export const Sidebar = ({
+    className,
+    hideSidebar,
+}: {
+    className?: string;
+    hideSidebar?: boolean;
+}) => {
+    const collapsedExternally = useRef<boolean>(false);
+    const [collapsed, setCollapsed] = useState(false);
+    const [isReportBugDialogOpen, setIsReportBugDialogOpen] = useState(false);
+    const { isAvailable: isBenchmarksAvailable } = useIsFeatureAvailable(Features.BENCHMARKS);
+
+    useEffect(() => {
+        // only react if explicitly defined
+        // however, do react if it has been changed externally
+        // eg. so that it reopen when navigating away from a collapsed route
+        if (hideSidebar !== undefined || collapsedExternally.current) {
+            setCollapsed(!!hideSidebar);
+            collapsedExternally.current = !!hideSidebar;
+        }
+    }, [hideSidebar]);
+
+    return (
+        <>
+            <aside
+                className={cx(styles.asideWrapper, className, {
+                    [styles.collapsed]: collapsed,
+                })}
+            >
+                <Sidenav>
+                    <SidenavItems>
+                        <SidebarNavLink to="/dashboard" label={i18n.t('Dashboard')} />
+                        <SidebarNavLink to="/datasets" label={i18n.t('Datasets')} />
+                        <SidebarParent
+                            label={i18n.t('Evaluate')}
+                            links={[
+                                {
+                                    label: i18n.t('Overview'),
+                                    to: '/evaluate',
+                                },
+                                {
+                                    label: i18n.t('Compare'),
+                                    to: '/evaluate/compare',
+                                },
+                                ...(isBenchmarksAvailable ? [{ label: i18n.t('Benchmarks'), to: '/evaluate/benchmarks' }] : []),
+                            ]}
+                        />
+                        <SidebarNavLink to="/predictions" label={i18n.t('Predict')} />
+                        <SidebarNavLink to="/signals" label={i18n.t('Signal policies')} />
+                        <SidebarNavLink to="/models" label={i18n.t('Models')} />
+                        <SidebarNavLink to="/jobs" label={i18n.t('Jobs')} />
+                    </SidenavItems>
+                    <SidenavFooter>
+                        <SidenavItems>
+                            <SidenavButton
+                                icon={<IconMessages16 />}
+                                label={i18n.t('Report a bug')}
+                                dataTest="sidebar-report-bug-button"
+                                onClick={() => setIsReportBugDialogOpen(true)}
+                            />
+                            <SidebarNavLink to="/guides" label={i18n.t('Guides')} />
+                            <SidebarNavLink to="/settings" label={i18n.t('Settings')} />
+                        </SidenavItems>
+                    </SidenavFooter>
+                </Sidenav>
+                <button
+                    className={styles.collapseButton}
+                    type="button"
+                    onClick={() => setCollapsed(!collapsed)}
+                >
+                    <div
+                        className={cx(styles.iconWrapper, {
+                            [styles.collapsed]: collapsed,
+                        })}
+                    >
+                        <IconChevronLeft24 />
+                    </div>
+                </button>
+            </aside>
+            {isReportBugDialogOpen && (
+                <ReportBugDialog
+                    onClose={() => setIsReportBugDialogOpen(false)}
+                />
+            )}
+        </>
+    );
+};
+
+export default Sidebar;

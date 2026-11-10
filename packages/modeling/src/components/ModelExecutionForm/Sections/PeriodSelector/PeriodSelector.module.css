@@ -1,0 +1,13 @@
+.formField {
+  margin-block-start: 1rem;
+}
+
+.errorText {
+  color: var(--colors-red700);
+  font-size: 0.875rem;
+  margin-block-start: 4px;
+}
+
+.periodSettingsNotice {
+  margin-block-start: 1rem;
+}

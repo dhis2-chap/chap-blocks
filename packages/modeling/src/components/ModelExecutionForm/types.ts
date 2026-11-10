@@ -1,0 +1,12 @@
+import type { ImportSummaryResponse } from '@chap-blocks/api';
+
+// This is a workaround to get the correct type for the rejected field - the openapi spec is incorrect
+export type ImportSummaryCorrected = Omit<ImportSummaryResponse, 'rejected'> & {
+    hash?: string;
+    rejected: {
+        featureName: string;
+        orgUnit: string;
+        reason: string;
+        timePeriods?: string[];
+    }[];
+};

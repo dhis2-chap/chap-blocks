@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "type": "module",
+  "license": "SEE LICENSE IN LICENSE",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "src",
+    "LICENSE",
+    "UPSTREAM.md",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "name": "@chap-blocks/core",
+  "dependencies": {
+    "@dhis2/multi-calendar-dates": "^2.1.2",
+    "date-fns": "^4.1.0"
+  }
+}

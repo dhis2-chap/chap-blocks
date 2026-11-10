@@ -1,0 +1,5 @@
+.mapItem {
+    inline-size: 100%;
+    block-size: 100%;
+    border: 1px solid #555;
+}

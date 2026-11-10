@@ -1,0 +1,7 @@
+.settingsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    inline-size: 100%;
+    max-inline-size: 800px;
+}

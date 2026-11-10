@@ -1,0 +1,27 @@
+{
+  "name": "@chap-blocks/reference",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@chap-blocks/modeling": "workspace:*",
+    "@chap-blocks/runtime": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@dhis2/d2-i18n": "1.2.0",
+    "@tanstack/react-query": "^4.42.0",
+    "@chap-blocks/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^6.4.1",
+    "@vitejs/plugin-react": "^4.7.0",
+    "@mdx-js/rollup": "^3.1.1",
+    "remark-frontmatter": "^5.0.0",
+    "remark-mdx-frontmatter": "^5.2.0"
+  }
+}

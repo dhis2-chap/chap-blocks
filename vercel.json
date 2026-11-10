@@ -1,0 +1,101 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm build:site",
+  "outputDirectory": "site",
+  "rewrites": [
+    {
+      "source": "/chap-api/:path*",
+      "destination": "/api/chap-proxy?__chap_path=:path*"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "modeling.edvinas.no"
+        }
+      ],
+      "destination": "/reference/index.html"
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "modeling.edvinas.no"
+        }
+      ],
+      "destination": "/reference/:path*"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "signals.edvinas.no"
+        }
+      ],
+      "destination": "/signals/index.html"
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "signals.edvinas.no"
+        }
+      ],
+      "destination": "/signals/:path*"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "blocks.edvinas.no"
+        }
+      ],
+      "destination": "/blocks-demo/index.html"
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "blocks.edvinas.no"
+        }
+      ],
+      "destination": "/blocks-demo/:path*"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "data.edvinas.no"
+        }
+      ],
+      "destination": "/data-checker/index.html"
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "data.edvinas.no"
+        }
+      ],
+      "destination": "/data-checker/:path*"
+    },
+    {
+      "source": "/",
+      "destination": "/reference/index.html"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/reference/:path*"
+    }
+  ]
+}
