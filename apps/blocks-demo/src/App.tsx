@@ -6,6 +6,7 @@ import { MapsTablesGroup } from './sections/MapsTables';
 import { LayoutGroup } from './sections/Layout';
 import { ControlsGroup } from './sections/Controls';
 import { ClientGroup } from './sections/Client';
+import { MonitoringGroup } from './sections/Monitoring';
 
 type NavGroup = { title: string; items: { id: string; label: string }[] };
 
@@ -28,6 +29,13 @@ const NAV: NavGroup[] = [
             { id: 'comparison-plot-list', label: 'ComparisonPlotList' },
             { id: 'split-period-selector', label: 'SplitPeriodSelector' },
             { id: 'comparison-wrapper', label: 'ComparionPlotWrapper' },
+        ],
+    },
+    {
+        title: 'Monitoring & outbreaks',
+        items: [
+            { id: 'monitoring-chart', label: 'MonitoringChart' },
+            { id: 'outbreak-metrics-table', label: 'OutbreakMetricsTable' },
         ],
     },
     {
@@ -70,9 +78,9 @@ const NAV: NavGroup[] = [
 ];
 
 const ENTRYPOINTS = [
-    ['@chap-blocks/ui/charts', 'UncertaintyAreaChart, ResultPlot, ComparisonPlot, view-model helpers'],
+    ['@chap-blocks/ui/charts', 'UncertaintyAreaChart, ResultPlot, ComparisonPlot, MonitoringChart, view-model helpers'],
     ['@chap-blocks/ui/maps', 'PredictionMap, parseOrgUnits, FeatureCollection, BasemapConfig'],
-    ['@chap-blocks/ui/tables', 'PredictionTable'],
+    ['@chap-blocks/ui/tables', 'PredictionTable, OutbreakMetricsTable'],
     ['@chap-blocks/ui/layout', 'Card, Widget, Pill, Tag, Ping, StatusIndicator, OverflowButton, PeriodPicker, PeriodRangeField'],
     ['@chap-blocks/ui/search', 'SearchField (React only)'],
     ['@chap-blocks/ui', 'Everything above plus Sidenav, evaluation lists, threshold and outbreak helpers'],
@@ -187,6 +195,7 @@ export function App() {
                     </section>
                     <ChartsGroup />
                     <EvaluationGroup />
+                    <MonitoringGroup />
                     <MapsTablesGroup />
                     <LayoutGroup />
                     <ControlsGroup />

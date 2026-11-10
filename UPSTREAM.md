@@ -23,4 +23,6 @@ Full frontend revision: `1662146dfe0b271bfe99bb7d9e5ce3f41102dbc5` (previously `
 
 The 2026-11-03 update was a three-way merge of upstream `f50baf86..1662146d` onto the local adaptations. Upstream query keys that included the global `OpenAPI.BASE` were dropped: each connection here has its own query cache. Local standalone user guides were kept, with notes added for upstream features.
 
+Prediction monitoring (`MonitoringWidget`, upstream #302 in `806d3441`) was ported from upstream `main` on 2026-11-10. Its chart and `monitoringSeries` live in `@chap-blocks/ui` as `MonitoringChart`, so the modeling widget only fetches. `OutbreakMetricsTable` in `@chap-blocks/ui` is a props-only version of the scores table in the upstream `OutbreakMetricsWidget`, which stays as upstream wrote it. The rest of upstream `1662146d..d2044f10` is not merged.
+
 The initial extraction included unmerged baseline-comparison widgets from `7d0b696c`. Those widgets were removed when aligning to `main`; the baseline comparisons that later landed in `main` (#320, #325) are included as upstream wrote them.

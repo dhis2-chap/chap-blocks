@@ -22,6 +22,9 @@ export { ComparisonPlotList } from './components/evaluation/ComparisonPlotList/C
 export { ComparionPlotWrapper } from './components/evaluation/ComparionPlotWrapper/ComparionPlotWrapper';
 export { PredictionTable } from './components/predictions/PredictionTable/PredictionTable';
 export { PredictionMap } from './components/predictions/PredictionMap/PredictionMap';
+export { MonitoringChart, type MonitoringChartProps } from './components/predictions/MonitoringChart/MonitoringChart';
+export { monitoringSeries } from './components/predictions/MonitoringChart/monitoringSeries';
+export { OutbreakMetricsTable, type OutbreakMetricsTableProps } from './components/evaluation/OutbreakMetricsTable/OutbreakMetricsTable';
 export {
     OverflowButton,
     Ping,
