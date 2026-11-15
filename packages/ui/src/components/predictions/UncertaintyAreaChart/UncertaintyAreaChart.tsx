@@ -426,12 +426,14 @@ export interface OutbreakPeriodChartInfo {
 
 export type UncertaintyAreaChartVariant = 'default' | 'tile';
 
+const NO_OUTBREAK_PERIODS: OutbreakPeriodChartInfo[] = [];
+
 export const UncertaintyAreaChart = ({
     series,
     predictionTargetName,
     endemicThreshold,
     endemicThresholds,
-    outbreakPeriods = [],
+    outbreakPeriods = NO_OUTBREAK_PERIODS,
     outbreakProbability,
     alertPeriods,
     thresholdLines,

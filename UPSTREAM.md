@@ -11,7 +11,7 @@ The API is regenerated from a Chap Core `2.7.0.dev0` OpenAPI snapshot, exported 
 - Upstream shared-package manifests declare MIT, while the upstream root license is GPL-3.0. Those original declarations are recorded here rather than being treated as a new license grant.
 - Highcharts and the other third-party dependencies retain their own licenses.
 
-This private extraction does not resolve the upstream mismatch or grant a new license to copied code. Package metadata points to the retained license and provenance notices; review upstream licensing before making a public package release.
+This extraction does not resolve the upstream mismatch or grant a new license to copied code. Package metadata points to the retained license and provenance notices; review upstream licensing before making a public package release.
 
 ## Adaptations
 

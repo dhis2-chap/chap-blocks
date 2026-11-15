@@ -17,7 +17,8 @@
     "./maps": "./src/maps.ts",
     "./search": "./src/search.tsx",
     "./layout": "./src/ui/index.ts",
-    "./tables": "./src/tables.ts"
+    "./tables": "./src/tables.ts",
+    "./utils": "./src/utils.ts"
   },
   "name": "@chap-blocks/ui",
   "dependencies": {

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import i18n from '@dhis2/d2-i18n';
 import cx from 'classnames';
 import {
@@ -35,10 +36,12 @@ export type OutbreakMetricsTableProps = {
     referenceRow?: OutbreakMetricsRow;
     /** Threshold description per signal level name. */
     thresholds?: Record<string, string>;
+    /** Optional host-specific help or guidance alongside each metric name. */
+    renderMetricLabel?: (metric: OutbreakMetricInfo) => ReactNode;
 };
 
 /** How well a signal policy's levels match observed outbreaks: one row per level, plus whole-policy scores. */
-export const OutbreakMetricsTable = ({ row, metrics, referenceRow, thresholds }: OutbreakMetricsTableProps) => {
+export const OutbreakMetricsTable = ({ row, metrics, referenceRow, thresholds, renderMetricLabel }: OutbreakMetricsTableProps) => {
     const binary = metrics.filter(metric => metric.kind === 'binary');
     const categorical = metrics.filter(metric => metric.kind === 'categorical');
     return (
@@ -62,7 +65,7 @@ export const OutbreakMetricsTable = ({ row, metrics, referenceRow, thresholds }:
                             <DataTableColumnHeader>{i18n.t('Signal level')}</DataTableColumnHeader>
                             {thresholds && <DataTableColumnHeader>{i18n.t('Threshold')}</DataTableColumnHeader>}
                             {binary.map(metric => (
-                                <DataTableColumnHeader key={metric.id} align="right"><MetricLabel metric={metric} /></DataTableColumnHeader>
+                                <DataTableColumnHeader key={metric.id} align="right">{renderMetricLabel ? renderMetricLabel(metric) : <MetricLabel metric={metric} />}</DataTableColumnHeader>
                             ))}
                         </DataTableRow>
                     </DataTableHead>
@@ -90,7 +93,7 @@ export const OutbreakMetricsTable = ({ row, metrics, referenceRow, thresholds }:
                     <strong>{i18n.t('Policy overall')}</strong>
                     {categorical.map(metric => (
                         <span key={metric.id}>
-                            <MetricLabel metric={metric} />
+                            {renderMetricLabel ? renderMetricLabel(metric) : <MetricLabel metric={metric} />}
                             <strong className={styles.number}>{formatScore(row.categorical[metric.id])}</strong>
                             <Comparison value={row.categorical[metric.id]} reference={referenceRow?.categorical[metric.id]} />
                         </span>
