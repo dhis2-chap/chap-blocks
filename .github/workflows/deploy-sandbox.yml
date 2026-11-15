@@ -3,8 +3,8 @@
 #
 # The CHAP_SANDBOX_SSH_KEY secret is a deploy key that the server forces into
 # /mnt/data/www/blocks, so this workflow can overwrite that directory and
-# nothing else. Setup and the shared deploy action: AGENTS.md in
-# dhis2-chap/chap-sandbox.
+# nothing else. Server setup: "Publishing something new" in the README of
+# dhis2-chap/chap-sandbox. The server's host key is pinned below.
 
 name: Deploy to chap-sandbox
 
@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   # Skips the deploy, instead of failing every push, until the server side is set
-  # up: the secret only exists once scripts/add-app.sh has run in chap-sandbox.
+  # up: the secret only exists once the host has a key for /mnt/data/www/blocks.
   key:
     runs-on: ubuntu-latest
     outputs:
@@ -52,8 +52,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @chap-blocks/demo build
 
-      - uses: dhis2-chap/chap-sandbox/.github/actions/deploy@main
-        with:
-          ssh-key: ${{ secrets.CHAP_SANDBOX_SSH_KEY }}
-          dir: apps/blocks-demo/dist
-          path: /blocks/
+      - name: Copy apps/blocks-demo/dist/ to the server
+        env:
+          SSH_KEY: ${{ secrets.CHAP_SANDBOX_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          echo '158.39.75.126 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL3q+49ScHeF+of+0SfLQf7WBmxEPIVraSPCfkfIM8cJ' > ~/.ssh/known_hosts
+          rsync -az --delete --info=stats1 -e 'ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes' apps/blocks-demo/dist/ deploy@158.39.75.126:/
+          echo 'https://chap-sandbox.dhis2.org/blocks/'
