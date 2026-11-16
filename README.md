@@ -64,7 +64,7 @@ imports are the same as here. [dhis2-chap/learning-material](https://github.com/
    "dependencies": { "@chap-blocks/ui": "workspace:*", "@chap-blocks/api": "workspace:*" }
    ```
 
-4. Build with the same Vite settings as these apps (React, the `/chap-api` development proxy, map-library hints,
+4. For a new standalone app, build with the same Vite settings as these apps (React, the `/chap-api` development proxy, map-library hints,
    one React instance):
 
    ```ts
@@ -77,6 +77,9 @@ imports are the same as here. [dhis2-chap/learning-material](https://github.com/
    **root** `package.json`. If you use `@chap-blocks/modeling`, its guides are MDX: add the MDX plugin and
    `publicDir` the way [`apps/reference/vite.config.ts`](apps/reference/vite.config.ts) does.
 
+   For an existing app (including a DHIS2 App Platform app), preserve its shell, plugins and proxy.
+   Follow [the host integration notes](docs/reuse.md#integrating-with-an-existing-application) instead of replacing its Vite config.
+
 5. For `tsc`, include the blocks' ambient module declarations in your `tsconfig.json`:
 
    ```json
@@ -85,21 +88,28 @@ imports are the same as here. [dhis2-chap/learning-material](https://github.com/
 
    Mount `CssVariables` from `@dhis2/ui` once in your app (see [reuse](docs/reuse.md) for providers and which package gives what).
 
-Clone with `git clone --recurse-submodules …` (or run `git submodule update --init` afterwards). This repository is
-private, so everyone who clones needs read access to it.
+Clone with `git clone --recurse-submodules …` (or run `git submodule update --init --recursive` afterwards).
+This repository is public; no private-repository token is required. CI must also initialize submodules before
+installing dependencies (see [host integration and CI](docs/reuse.md#integrating-with-an-existing-application)).
 
 ### Keeping up to date
 
 Your repository pins an exact chap-blocks commit, so a push here never changes another project by itself. To update:
 
 ```sh
-git submodule update --remote vendor/chap-blocks   # move to the tip of main
-git -C vendor/chap-blocks log --oneline ORIG_HEAD..HEAD
-pnpm install && pnpm check                          # your own checks
+chap_blocks_before=$(git -C vendor/chap-blocks rev-parse HEAD)
+git submodule update --init --remote vendor/chap-blocks
+git -C vendor/chap-blocks log --oneline "$chap_blocks_before"..HEAD
+git -C vendor/chap-blocks diff "$chap_blocks_before"..HEAD -- packages
+pnpm install
+# Run your host repository's typecheck, lint, tests and production build.
+# Use pnpm check only if your host defines that script.
 git add vendor/chap-blocks pnpm-lock.yaml && git commit -m "chore: update chap-blocks"
 ```
 
-To roll back, check out the previous commit in `vendor/chap-blocks` and commit that. Change the blocks here, never
+For a specific reviewed revision, run `git -C vendor/chap-blocks fetch origin` followed by
+`git -C vendor/chap-blocks checkout <commit>`, then install and validate as above. To roll back, check out
+the previous commit in `vendor/chap-blocks`, run `pnpm install`, validate, and commit both the pin and lockfile. Change the blocks here, never
 inside `vendor/`: push to this repository, then update. Breaking changes to a package's exports should say so in the
 commit message, because consumers read that log when they update.
 
@@ -162,4 +172,4 @@ The Vite proxy is for development. For deployment, configure your reverse proxy 
 
 The checked-in OpenAPI snapshot targets Chap Core `2.7.0.dev0`. Regenerate with `pnpm api:generate`; see [API maintenance](packages/api/README.md). Server-version feature checks from the modeling app are retained.
 
-Extracted source and its revision are recorded in [UPSTREAM.md](UPSTREAM.md). Original license notices are preserved; this private repository has not published packages or changed upstream licensing. Highcharts retains its own licensing terms.
+Extracted source and its revision are recorded in [UPSTREAM.md](UPSTREAM.md). Original license notices are preserved; this repository has not published packages or changed upstream licensing. Highcharts retains its own licensing terms.

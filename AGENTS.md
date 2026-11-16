@@ -6,7 +6,7 @@
 - Preserve source attribution and licenses. Do not copy uncommitted upstream work without an explicit reason.
 - Regenerate API sources with `pnpm api:generate`; do not hand-edit generated files.
 - Run `pnpm check` after a functional change. Test meaningful request/error/state behavior.
-- The repository is private. Do not publish packages or change visibility without user authorization.
+- The repository is public; packages are not published to npm. Do not publish packages or change visibility without user authorization.
 
 ## Deploying to chap-sandbox
 
