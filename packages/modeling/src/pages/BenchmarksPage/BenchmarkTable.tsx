@@ -1,26 +1,22 @@
 import { useChapClient } from '@chap-blocks/runtime';
-import { ReactNode, useMemo, useState } from 'react';
-import cx from 'classnames';
+import { ReactNode, useCallback, useMemo, useState } from 'react';
 import i18n from '@dhis2/d2-i18n';
-import { Button, Checkbox, DataTable, DataTableBody, DataTableCell, DataTableColumnHeader, DataTableHead, DataTableRow, MenuItem, NoticeBox, SingleSelect, Tooltip } from '@dhis2/ui';
-import { LeaderboardBacktestRead, BacktestSpecificationRead } from '@chap-blocks/api';
-import { createColumnHelper, flexRender, getCoreRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
+import { Button, Checkbox, MenuItem, NoticeBox, SingleSelect, Tooltip } from '@dhis2/ui';
+import type { LeaderboardBacktestRead, BacktestSpecificationRead, MetricInfo } from '@chap-blocks/api';
+import { BenchmarkTable as BenchmarkScoresTable, type BenchmarkTableRun } from '@chap-blocks/ui/tables';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { saveAs } from 'file-saver';
 import { TableActionButton } from '../../components/TableActionButton';
 import { useModels } from '../../hooks/useModels';
-import { benchmarkCsv, getBestRunIds, getMetricIds, metricSortKey } from './benchmarkUtils';
-import { formatComparison, getDefaultMetricIds, prettifyMetricId } from '../../components/PageContent/EvaluationDetails/EvaluationMetricsWidget/metricCatalog';
+import { benchmarkCsv, getMetricIds } from './benchmarkUtils';
+import { getDefaultMetricIds } from '../../components/PageContent/EvaluationDetails/EvaluationMetricsWidget/metricCatalog';
 import { MetricInfoIcon } from '../../components/MetricInfoIcon/MetricInfoIcon';
 import { getComparison, referenceLabel, referenceName, useReferenceModel } from '../../components/ModelComparisons/referenceModels';
-import comparisonStyles from '../../components/ModelComparisons/ModelComparisons.module.css';
 import styles from './BenchmarksPage.module.css';
 
 /* The display name and the comparison with the selected reference are resolved into the row, because the table caches row values until the data changes. */
-type BenchmarkRun = LeaderboardBacktestRead & { modelName: string; comparison?: Record<string, number | null> };
-
-const columnHelper = createColumnHelper<BenchmarkRun>();
+type BenchmarkRun = BenchmarkTableRun & { run: LeaderboardBacktestRead };
 
 type Props = {
     specification: BacktestSpecificationRead;
@@ -30,10 +26,6 @@ type Props = {
     actions?: ReactNode;
     children?: ReactNode;
 };
-
-const isMetricColumn = (id: string) => id.startsWith('metric:');
-
-const finite = (value: number | null | undefined) => typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 
 const ViewEvaluationButton = ({ evaluationId }: { evaluationId: number }) => {
     const navigate = useNavigate();
@@ -69,81 +61,17 @@ export const BenchmarkTable = ({ specification, options, actions, children }: Pr
     // Newest runs first until the user sorts by a column. Baselines are only shown as the reference to compare with.
     const runs = useMemo<BenchmarkRun[]>(() => backtests
         .map(run => ({
-            ...run,
-            modelName: models?.find(model => model.id === run.configuredModel?.id)?.displayName || run.configuredModel?.name || run.modelId,
+            run,
+            id: run.id,
+            aggregateMetrics: run.aggregateMetrics,
+            version: run.modelTemplateVersion,
+            name: models?.find(model => model.id === run.configuredModel?.id)?.displayName || run.configuredModel?.name || run.modelId,
             comparison: getComparison(run, reference),
         }))
-        .sort((a, b) => (b.created ?? '').localeCompare(a.created ?? '')), [backtests, models, reference]);
-    const columns = useMemo(() => [
-        columnHelper.accessor('modelName', {
-            id: 'model',
-            header: i18n.t('Model'),
-            cell: info => <span className={styles.strong}>{info.getValue()}</span>,
-        }),
-        ...metricIds.map((metricId) => {
-            const metric = metrics?.find(item => item.id === metricId);
-            const bestRunIds = getBestRunIds(runs, metric);
-            const label = metric?.displayName || prettifyMetricId(metricId);
-            const score = (run: BenchmarkRun) => finite(run.aggregateMetrics[metricId]);
-            // Comparison values are oriented so positive is better, whatever the metric's own direction.
-            return columnHelper.accessor(run => reference ? finite(run.comparison?.[metricId]) : score(run), {
-                id: `metric:${metricId}`,
-                header: () => (
-                    <span className={styles.metricHeader}>
-                        {metric?.unit && !reference ? `${label} (${metric.unit})` : label}
-                        <MetricInfoIcon metric={metric} comparedWith={reference && referenceName(reference)} />
-                    </span>
-                ),
-                sortUndefined: 'last',
-                sortingFn: reference
-                    ? (a, b, id) => b.getValue<number>(id) - a.getValue<number>(id)
-                    : (a, b, id) => metricSortKey(a.getValue<number>(id), metric) - metricSortKey(b.getValue<number>(id), metric),
-                cell: (info) => {
-                    const run = info.row.original;
-                    const best = bestRunIds.has(run.id);
-                    // A comparison model run is not compared with itself, so its row keeps the score the others are compared with.
-                    if (reference && run.id === reference.backtestId) {
-                        const referenceScore = score(run);
-                        return referenceScore === undefined ? '—' : (
-                            <span className={cx(styles.referenceScore, { [styles.best]: best })} title={i18n.t('Score of {{reference}}, which the other rows are compared with', { reference: referenceName(reference) })}>
-                                {referenceScore.toLocaleString(undefined, { maximumSignificantDigits: 6 })}
-                            </span>
-                        );
-                    }
-                    const value = info.getValue();
-                    if (value === undefined) return '—';
-                    return (
-                        <span
-                            className={cx({ [comparisonStyles.better]: reference && value > 0, [comparisonStyles.worse]: reference && value < 0, [styles.best]: best })}
-                            title={best ? i18n.t('Best score among these runs') : undefined}
-                        >
-                            {reference ? formatComparison(value, metric) : value.toLocaleString(undefined, { maximumSignificantDigits: 6 })}
-                        </span>
-                    );
-                },
-            });
-        }),
-        columnHelper.accessor(run => run.modelTemplateVersion ?? undefined, {
-            id: 'version',
-            header: i18n.t('Version'),
-            cell: info => info.getValue() ?? '—',
-            sortUndefined: 'last',
-        }),
-        columnHelper.display({
-            id: 'actions',
-            header: i18n.t('Actions'),
-            cell: ({ row }) => <ViewEvaluationButton evaluationId={row.original.id} />,
-        }),
-    ], [runs, metricIds, metrics, reference]);
-    const table = useReactTable({
-        data: runs,
-        columns,
-        enableSortingRemoval: false,
-        getRowId: run => String(run.id),
-        getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-    });
-
+        .sort((a, b) => (b.run.created ?? '').localeCompare(a.run.created ?? '')), [backtests, models, reference]);
+    const renderMetricInfo = useCallback((metric: MetricInfo | undefined, comparedWith?: string) => <MetricInfoIcon metric={metric} comparedWith={comparedWith} />, []);
+    const renderActions = useCallback((run: BenchmarkTableRun) => <ViewEvaluationButton evaluationId={run.id} />, []);
+    const referenceRun = useMemo(() => reference && { name: referenceName(reference), runId: reference.backtestId ?? undefined }, [reference]);
     const referenceSelect = selectedReference && (
         <SingleSelect dense disabled={!comparing} selected={String(selectedReference.configuredModel.id)} onChange={({ selected }) => select(selected)}>
             {references.map(item => (
@@ -192,7 +120,7 @@ export const BenchmarkTable = ({ specification, options, actions, children }: Pr
                         small
                         disabled={!backtests.length}
                         onClick={() => saveAs(
-                            new Blob([benchmarkCsv(specification, table.getRowModel().rows.map(row => row.original))], { type: 'text/csv;charset=utf-8' }),
+                            new Blob([benchmarkCsv(specification, runs.map(row => row.run))], { type: 'text/csv;charset=utf-8' }),
                             `benchmark-${specification.id}.csv`,
                         )}
                     >
@@ -211,43 +139,14 @@ export const BenchmarkTable = ({ specification, options, actions, children }: Pr
                     {i18n.t('Add models to run them against this benchmark. Completed runs will appear here.')}
                 </NoticeBox>
             ) : (
-                <div className={styles.table}>
-                    <DataTable>
-                        <DataTableHead>
-                            {table.getHeaderGroups().map(group => (
-                                <DataTableRow key={group.id}>
-                                    {group.headers.map(header => (
-                                        <DataTableColumnHeader
-                                            key={header.id}
-                                            className={header.column.id === 'model' ? styles.sticky : undefined}
-                                            {...(header.column.getCanSort() ? {
-                                                sortDirection: header.column.getIsSorted() || 'default',
-                                                sortIconTitle: i18n.t('Sort by {{column}}', { column: header.column.id }),
-                                                onSortIconClick: () => header.column.toggleSorting(),
-                                            } : {})}
-                                        >
-                                            {flexRender(header.column.columnDef.header, header.getContext())}
-                                        </DataTableColumnHeader>
-                                    ))}
-                                </DataTableRow>
-                            ))}
-                        </DataTableHead>
-                        <DataTableBody>
-                            {table.getRowModel().rows.map(row => (
-                                <DataTableRow key={row.id}>
-                                    {row.getVisibleCells().map(cell => (
-                                        <DataTableCell
-                                            key={cell.id}
-                                            className={isMetricColumn(cell.column.id) ? styles.number : cell.column.id === 'model' ? styles.sticky : undefined}
-                                        >
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </DataTableCell>
-                                    ))}
-                                </DataTableRow>
-                            ))}
-                        </DataTableBody>
-                    </DataTable>
-                </div>
+                <BenchmarkScoresTable
+                    runs={runs}
+                    metricIds={metricIds}
+                    metrics={metrics}
+                    reference={referenceRun}
+                    renderMetricInfo={renderMetricInfo}
+                    renderActions={renderActions}
+                />
             )}
         </>
     );
