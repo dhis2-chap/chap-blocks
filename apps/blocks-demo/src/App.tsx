@@ -37,6 +37,7 @@ const NAV: NavGroup[] = [
             { id: 'monitoring-chart', label: 'MonitoringChart' },
             { id: 'outbreak-metrics-table', label: 'OutbreakMetricsTable' },
             { id: 'signal-review-table', label: 'SignalReviewTable' },
+            { id: 'benchmark-table', label: 'BenchmarkTable' },
         ],
     },
     {
@@ -81,7 +82,7 @@ const NAV: NavGroup[] = [
 const ENTRYPOINTS = [
     ['@chap-blocks/ui/charts', 'UncertaintyAreaChart, ResultPlot, ComparisonPlot, MonitoringChart, view-model helpers'],
     ['@chap-blocks/ui/maps', 'PredictionMap, parseOrgUnits, FeatureCollection, BasemapConfig'],
-    ['@chap-blocks/ui/tables', 'PredictionTable, OutbreakMetricsTable, SignalReviewTable'],
+    ['@chap-blocks/ui/tables', 'PredictionTable, OutbreakMetricsTable, SignalReviewTable, BenchmarkTable'],
     ['@chap-blocks/ui/layout', 'Card, Widget, Pill, Tag, Ping, StatusIndicator, OverflowButton, PeriodPicker, PeriodRangeField'],
     ['@chap-blocks/ui/search', 'SearchField (React only)'],
     ['@chap-blocks/ui', 'Everything above plus Sidenav, evaluation lists, threshold and outbreak helpers'],
