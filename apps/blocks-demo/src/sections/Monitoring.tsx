@@ -1,6 +1,6 @@
 import { MonitoringChart } from '@chap-blocks/ui/charts';
-import { OutbreakMetricsTable } from '@chap-blocks/ui/tables';
-import type { MonitoringSource, OutbreakMetricInfo, OutbreakMetricKind, OutbreakMetricsRow, PredictionSetupMonitoring } from '@chap-blocks/api';
+import { BenchmarkTable, OutbreakMetricsTable, type BenchmarkTableRun } from '@chap-blocks/ui/tables';
+import type { MetricInfo, MonitoringSource, OutbreakMetricInfo, OutbreakMetricKind, OutbreakMetricsRow, PredictionSetupMonitoring } from '@chap-blocks/api';
 import { Group, Section } from '../gallery/Section';
 
 const point = (period: string, source: string, value: number, runningValue: number, nObserved: number) => ({
@@ -56,7 +56,7 @@ const monitoringCode = `import { MonitoringChart } from '@chap-blocks/ui/charts'
   formatValue={v => v.toLocaleString(undefined, { style: 'percent', signDisplay: 'exceptZero' })}
 />`;
 
-const outbreakCode = `import { OutbreakMetricsTable } from '@chap-blocks/ui/tables';
+const outbreakCode = `import { BenchmarkTable, OutbreakMetricsTable, type BenchmarkTableRun } from '@chap-blocks/ui/tables';
 
 // metrics: chap.metrics.listOutbreakMetrics…()
 // scores:  chap.metrics.getOutbreakMetrics…(backtestId, policyId)
@@ -69,6 +69,29 @@ const outbreakCode = `import { OutbreakMetricsTable } from '@chap-blocks/ui/tabl
     thresholds={{ Watch: 'Above the 75th percentile', Alert: 'Above the 90th percentile' }}
   />
 ))}`;
+
+
+const benchmarkMetrics = [
+    { id: 'crps_log1p', displayName: 'CRPS (log)', optimizationDirection: 'minimize', comparisonOp: 'skill_ratio', sortOrder: 0, isSelected: true },
+    { id: 'mae', displayName: 'MAE', unit: 'cases', optimizationDirection: 'minimize', comparisonOp: 'skill_ratio', sortOrder: 1, isSelected: true },
+    { id: 'coverage_10_90', displayName: 'Coverage 10–90%', target: 0.8, optimizationDirection: 'minimize', comparisonOp: 'target_distance', sortOrder: 2, isSelected: true },
+] as MetricInfo[];
+
+const benchmarkRuns: BenchmarkTableRun[] = [
+    { id: 1, name: 'Seasonal naive', version: '1', aggregateMetrics: { crps_log1p: 0.41, mae: 18.2, coverage_10_90: 0.74 } },
+    { id: 2, name: 'Auto-regressive', version: '2.1', aggregateMetrics: { crps_log1p: 0.36, mae: 15.9, coverage_10_90: 0.79 }, comparison: { crps_log1p: 0.122, mae: 0.126, coverage_10_90: 0.05 } },
+    { id: 3, name: 'MSTL ARIMA', version: '0.4', aggregateMetrics: { crps_log1p: 0.44, mae: 17.1, coverage_10_90: 0.86 }, comparison: { crps_log1p: -0.073, mae: 0.06, coverage_10_90: 0 } },
+];
+
+const benchmarkCode = `import { BenchmarkTable } from '@chap-blocks/ui/tables';
+
+// runs from chap.backtests…getBacktestSpecification…(id).backtests, named by their configured model
+<BenchmarkTable
+  runs={runs.map(run => ({ id: run.id, name, aggregateMetrics: run.aggregateMetrics, comparison, version }))}
+  metricIds={['crps_log1p', 'mae', 'coverage_10_90']}
+  metrics={specification.metrics}
+  reference={{ name: 'Seasonal naive', runId: 1 }}   // optional: compare with a baseline
+/>`;
 
 export function MonitoringGroup() {
     return (
@@ -121,6 +144,28 @@ export function MonitoringGroup() {
                     referenceRow={referenceRow}
                     thresholds={{ Watch: 'Above the 75th percentile', Alert: 'Above the 90th percentile' }}
                 />
+            </Section>
+            <Section
+                id="benchmark-table"
+                title="BenchmarkTable"
+                importFrom="@chap-blocks/ui/tables"
+                exports={['BenchmarkTable', 'getBestRunIds', 'metricSortKey', 'formatComparison', 'formatScore', 'prettifyMetricId']}
+                description={<p>Model runs on one benchmark, a column per metric, sortable, with the best score in each column highlighted. With a reference, each score shows how it compares with that model instead.</p>}
+                props={[
+                    { name: 'runs', type: 'BenchmarkTableRun[]', required: true, description: 'One row per run: id, name, aggregateMetrics, and optionally comparison and version.' },
+                    { name: 'metricIds', type: 'string[]', required: true, description: 'The metric columns, in order.' },
+                    { name: 'metrics', type: 'MetricInfo[]', description: 'Metric catalog: names, units and direction. Without it nothing is highlighted as best.' },
+                    { name: 'reference', type: '{ name: string; runId?: number }', description: 'Show comparisons with this model; its own run keeps its score.' },
+                    { name: 'renderMetricInfo', type: '(metric, comparedWith?) => ReactNode', description: 'Shown after each metric name, e.g. an info icon.' },
+                    { name: 'renderActions', type: '(run) => ReactNode', description: 'Adds an Actions column.' },
+                    { name: 'showVersion', type: 'boolean', description: 'Show the Version column. Default true.' },
+                    { name: 'initialSorting', type: 'SortingState', description: 'Sorting before the user sorts, e.g. [{ id: \'metric:crps_log1p\', desc: false }].' },
+                ]}
+                code={benchmarkCode}
+                wide
+            >
+                <BenchmarkTable runs={benchmarkRuns} metricIds={['crps_log1p', 'mae', 'coverage_10_90']} metrics={benchmarkMetrics} />
+                <BenchmarkTable runs={benchmarkRuns} metricIds={['crps_log1p', 'mae', 'coverage_10_90']} metrics={benchmarkMetrics} reference={{ name: 'Seasonal naive', runId: 1 }} />
             </Section>
         </Group>
     );

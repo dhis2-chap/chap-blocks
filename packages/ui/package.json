@@ -17,7 +17,8 @@
     "./maps": "./src/maps.ts",
     "./search": "./src/search.tsx",
     "./layout": "./src/ui/index.ts",
-    "./tables": "./src/tables.ts"
+    "./tables": "./src/tables.ts",
+    "./metrics": "./src/metrics.ts"
   },
   "name": "@chap-blocks/ui",
   "dependencies": {
@@ -37,7 +38,8 @@
     "@chap-blocks/core": "workspace:*",
     "@chap-blocks/api": "workspace:*",
     "@dhis2/ui-icons": "^10.13.0",
-    "clsx": "^2.1.1"
+    "clsx": "^2.1.1",
+    "@tanstack/react-table": "^8.21.3"
   },
   "peerDependencies": {
     "react": "^18.3.1",
