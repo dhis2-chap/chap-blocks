@@ -50,6 +50,8 @@ const THRESHOLD_LINE_STYLE = {
     connectNulls: false,
 } as const;
 
+const HIGHLIGHT_BAND_COLOR = 'rgba(108, 119, 135, 0.18)';
+
 const getChartOptions = (
     series: PredictionOrgUnitSeries,
     predictionTargetName: string,
@@ -64,6 +66,7 @@ const getChartOptions = (
     outbreakProbability?: OutbreakProbability,
     alertPeriods?: AlertPeriodChartInfo[],
     thresholdLines: ThresholdChartLine[] = [],
+    highlightPeriods: string[] = [],
 ): Highcharts.Options => {
     const isTile = variant === 'tile';
     const disabledAnimationOptions = getDisabledAnimationOptions();
@@ -333,22 +336,30 @@ const getChartOptions = (
                     },
                 }];
             }),
-            plotBands: alertPeriods !== undefined
-                ? alertPeriods.flatMap((alert) => {
-                        const index = getPeriodIndex(alert.period);
-                        return index === undefined ? [] : [{ from: index - 0.5, to: index + 0.5, color: alert.color }];
-                    })
-                : outbreakPeriods
-                        .filter(outbreakPeriod => outbreakPeriod.outbreak)
-                        .map((outbreakPeriod) => {
-                            const index = getPeriodIndex(outbreakPeriod.period);
+            plotBands: [
+                // Highlights say "look here" and nothing about the period itself,
+                // so they add no tooltip line and sit under any alert band.
+                ...highlightPeriods.flatMap((period) => {
+                    const index = getPeriodIndex(period);
+                    return index === undefined ? [] : [{ from: index - 0.5, to: index + 0.5, color: HIGHLIGHT_BAND_COLOR }];
+                }),
+                ...(alertPeriods !== undefined
+                    ? alertPeriods.flatMap((alert) => {
+                            const index = getPeriodIndex(alert.period);
+                            return index === undefined ? [] : [{ from: index - 0.5, to: index + 0.5, color: alert.color }];
+                        })
+                    : outbreakPeriods
+                            .filter(outbreakPeriod => outbreakPeriod.outbreak)
+                            .map((outbreakPeriod) => {
+                                const index = getPeriodIndex(outbreakPeriod.period);
 
-                            return {
-                                from: (index ?? 0) - 0.5,
-                                to: (index ?? 0) + 0.5,
-                                color: 'rgba(212, 64, 64, 0.16)',
-                            };
-                        }),
+                                return {
+                                    from: (index ?? 0) - 0.5,
+                                    to: (index ?? 0) + 0.5,
+                                    color: 'rgba(212, 64, 64, 0.16)',
+                                };
+                            })),
+            ],
         },
         yAxis: {
             title: {
@@ -399,6 +410,8 @@ interface PredicationChartProps {
     outbreakProbability?: OutbreakProbability;
     alertPeriods?: AlertPeriodChartInfo[];
     thresholdLines?: ThresholdChartLine[];
+    /** Periods to mark with a neutral band, for example the one a text beside the chart is about. */
+    highlightPeriods?: string[];
     variant?: UncertaintyAreaChartVariant;
     zoomRange?: ZoomRange | null;
     onZoomChange?: (range: ZoomRange | null) => void;
@@ -435,6 +448,7 @@ export const UncertaintyAreaChart = ({
     outbreakProbability,
     alertPeriods,
     thresholdLines,
+    highlightPeriods,
     variant = 'default',
     zoomRange,
     onZoomChange,
@@ -504,6 +518,7 @@ export const UncertaintyAreaChart = ({
             outbreakProbability,
             alertPeriods,
             thresholdLines,
+            highlightPeriods,
         );
     }, [
         series,
@@ -514,6 +529,7 @@ export const UncertaintyAreaChart = ({
         outbreakProbability,
         alertPeriods,
         thresholdLines,
+        highlightPeriods,
         variant,
         handleAfterSetExtremes,
         hasExternalZoomControls,

@@ -69,3 +69,23 @@ describe('recorded alert chart periods', () => {
         expect(tooltip).toContain('&lt;b&gt;Watch&lt;/b&gt;');
     });
 });
+
+describe('highlighted chart periods', () => {
+    it('marks the period with a band under the alert bands, and adds nothing to the tooltip', () => {
+        renderToStaticMarkup(createElement(UncertaintyAreaChart, {
+            series, predictionTargetName: 'Cases',
+            highlightPeriods: ['2024W1', '2023W01'],
+            alertPeriods: [{ period: '2024W01', label: 'Watch', color: '#ffead5' }],
+        }));
+        const bands = (captured.options.xAxis as Highcharts.XAxisOptions).plotBands!;
+        expect(bands).toHaveLength(2);
+        expect(bands[0]).toMatchObject({ from: -0.5, to: 0.5 });
+        expect(bands[0].color).not.toBe('#ffead5');
+        expect(bands[1]).toEqual({ from: -0.5, to: 0.5, color: '#ffead5' });
+
+        renderToStaticMarkup(createElement(UncertaintyAreaChart, { series, predictionTargetName: 'Cases', highlightPeriods: ['2024W01'] }));
+        const formatter = captured.options.tooltip!.formatter!;
+        const tooltip = formatter.call({ x: '2024W01', points: [] } as unknown as Highcharts.TooltipFormatterContextObject, {} as Highcharts.Tooltip);
+        expect(tooltip).toBe('<b>Week 1 2024</b><br/>');
+    });
+});
