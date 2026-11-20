@@ -1,0 +1,96 @@
+.scroll {
+    overflow-x: auto;
+    inline-size: 0;
+    min-inline-size: 100%;
+}
+
+.grid {
+    border-collapse: separate;
+    border-spacing: 2px;
+    font-size: 13px;
+}
+
+.rowHead {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    padding-inline-end: var(--spacers-dp12);
+    background: var(--colors-white);
+    text-align: start;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.highlighted {
+    color: var(--colors-grey700);
+    font-style: italic;
+}
+
+.column {
+    min-inline-size: 32px;
+    color: var(--colors-grey700);
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.cell {
+    block-size: 26px;
+    border-radius: 3px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Blue, as in BenchmarkTable: first means best among these, not good. */
+.rank1 {
+    background: #004bbd;
+    color: var(--colors-white);
+    font-weight: 700;
+}
+
+.rank2 {
+    background: #9bbdff;
+    color: var(--colors-grey900);
+}
+
+.rank3 {
+    background: #c4dcf2;
+    color: var(--colors-grey900);
+}
+
+.rank4 {
+    background: var(--colors-grey100);
+    color: var(--colors-grey700);
+}
+
+.missing {
+    color: var(--colors-grey500);
+}
+
+.wins {
+    padding-inline-start: var(--spacers-dp12);
+    color: var(--colors-grey700);
+    font-weight: 400;
+    text-align: start;
+    white-space: nowrap;
+}
+
+.track {
+    display: inline-block;
+    vertical-align: middle;
+    inline-size: 80px;
+    block-size: 10px;
+    margin-inline-end: var(--spacers-dp8);
+    border-radius: 2px;
+    background: var(--colors-grey200);
+    overflow: hidden;
+}
+
+.bar {
+    display: block;
+    block-size: 100%;
+    background: #004bbd;
+}
+
+.count {
+    font-variant-numeric: tabular-nums;
+}

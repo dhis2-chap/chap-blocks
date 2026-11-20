@@ -1,0 +1,161 @@
+.figure {
+    margin: 0;
+}
+
+.chart {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    font-family: inherit;
+}
+
+/* Colours match UncertaintyAreaChart and ResultPlot, so the same forecast reads the same everywhere. */
+.grid {
+    stroke: var(--colors-grey300);
+    stroke-width: 1;
+}
+
+.tick {
+    fill: var(--colors-grey700);
+    font-size: 12px;
+}
+
+.label {
+    fill: var(--colors-grey800);
+    font-size: 13px;
+}
+
+.split {
+    stroke: var(--colors-grey600);
+    stroke-dasharray: 4 4;
+}
+
+.highlight {
+    fill: rgba(108, 119, 135, 0.18);
+}
+
+.outer {
+    fill: #c4dcf2;
+}
+
+.mid {
+    fill: #9bbdff;
+}
+
+.median {
+    fill: none;
+    stroke: #004bbd;
+    stroke-width: 2.5;
+}
+
+.observed {
+    fill: none;
+    stroke: #f68000;
+    stroke-width: 2.5;
+}
+
+.sample {
+    fill: #004bbd;
+    opacity: 0.45;
+}
+
+.sampleOutside {
+    fill: var(--colors-grey600);
+    opacity: 0.35;
+}
+
+.error {
+    stroke: var(--colors-grey900);
+    stroke-width: 2;
+}
+
+.hit {
+    fill: #f68000;
+    stroke: var(--colors-white);
+    stroke-width: 2;
+}
+
+.miss {
+    fill: var(--colors-white);
+    stroke: var(--colors-red700);
+    stroke-width: 3;
+}
+
+.hover {
+    fill: transparent;
+}
+
+/* Hidden parts keep their place, so revealing one never moves the others. */
+.hidden {
+    visibility: hidden;
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacers-dp4) var(--spacers-dp16);
+    margin-block-start: var(--spacers-dp8);
+    color: var(--colors-grey800);
+    font-size: 13px;
+}
+
+.legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacers-dp4);
+}
+
+.key {
+    display: inline-block;
+    inline-size: 16px;
+    block-size: 10px;
+    border-radius: 2px;
+}
+
+.keyObserved {
+    block-size: 3px;
+    background: #f68000;
+}
+
+.keyMedian {
+    block-size: 3px;
+    background: #004bbd;
+}
+
+.keyMid {
+    background: #9bbdff;
+}
+
+.keyOuter {
+    background: #c4dcf2;
+}
+
+.keySample {
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    background: #004bbd;
+    opacity: 0.45;
+}
+
+.keyHit {
+    inline-size: 10px;
+    border-radius: 50%;
+    background: #f68000;
+}
+
+.keyMiss {
+    inline-size: 10px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 2px var(--colors-red700);
+}
+
+.keyError {
+    inline-size: 3px;
+    block-size: 14px;
+    background: var(--colors-grey900);
+}
+
+.empty {
+    color: var(--colors-grey700);
+}

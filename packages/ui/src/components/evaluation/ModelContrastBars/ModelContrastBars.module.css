@@ -1,0 +1,102 @@
+.contrast {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacers-dp8);
+    font-size: 14px;
+}
+
+.summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacers-dp4) var(--spacers-dp16);
+    margin: 0;
+}
+
+/* Blue and magenta: neither model is "good" or "bad", so no green and red. */
+.a strong {
+    color: #004bbd;
+}
+
+.b strong {
+    color: #a3166b;
+}
+
+.muted {
+    margin: 0;
+    color: var(--colors-grey700);
+}
+
+.scroll {
+    overflow-x: auto;
+    inline-size: 0;
+    min-inline-size: 100%;
+}
+
+.table {
+    inline-size: 100%;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: var(--spacers-dp4) var(--spacers-dp8);
+    border-block-end: 1px solid var(--colors-grey200);
+    text-align: start;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.table thead th {
+    color: var(--colors-grey700);
+    font-size: 13px;
+}
+
+.number {
+    text-align: end !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.better {
+    font-weight: 600 !important;
+}
+
+.barHead {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--spacers-dp16);
+}
+
+.barCell {
+    inline-size: 45%;
+    min-inline-size: 240px;
+}
+
+.track {
+    position: relative;
+    block-size: 14px;
+}
+
+.axis {
+    position: absolute;
+    inset-block: -4px;
+    left: 50%;
+    border-inline-start: 1px solid var(--colors-grey500);
+}
+
+.bar {
+    position: absolute;
+    inset-block: 0;
+    border-radius: 2px;
+}
+
+.barA {
+    background: #004bbd;
+}
+
+.barB {
+    background: #a3166b;
+}
+
+.empty {
+    color: var(--colors-grey700);
+}

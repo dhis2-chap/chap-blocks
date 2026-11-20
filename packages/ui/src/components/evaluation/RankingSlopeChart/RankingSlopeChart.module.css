@@ -1,0 +1,66 @@
+.figure {
+    margin: 0;
+    max-inline-size: 720px;
+}
+
+.chart {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+}
+
+.head {
+    fill: var(--colors-grey700);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.label {
+    fill: var(--colors-grey900);
+    font-size: 13px;
+}
+
+.value {
+    fill: var(--colors-grey600);
+    font-variant-numeric: tabular-nums;
+}
+
+.top {
+    font-weight: 700;
+}
+
+.line {
+    fill: none;
+    stroke-linecap: round;
+}
+
+/* Darker and thicker the closer the forecast put the org unit to where it really was. */
+.same {
+    stroke: #004bbd;
+    stroke-width: 2.5;
+}
+
+.near {
+    stroke: #9bbdff;
+    stroke-width: 2;
+}
+
+.far {
+    stroke: var(--colors-grey400);
+    stroke-width: 1.5;
+}
+
+.cutoff {
+    stroke: var(--colors-grey500);
+    stroke-dasharray: 3 4;
+}
+
+.caption {
+    margin-block-start: var(--spacers-dp8);
+    color: var(--colors-grey800);
+    font-size: 13px;
+}
+
+.empty {
+    color: var(--colors-grey700);
+}

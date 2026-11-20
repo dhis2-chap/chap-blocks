@@ -28,6 +28,14 @@ export { OutbreakMetricsTable, type OutbreakMetricsTableProps } from './componen
 export { SignalReviewTable, type SignalReview, type SignalReviewTableProps } from './components/signals/SignalReviewTable';
 export { BenchmarkTable, type BenchmarkTableProps, type BenchmarkTableRun } from './components/evaluation/BenchmarkTable/BenchmarkTable';
 export * from './metrics';
+export { ForecastBandsChart, type ForecastBandsChartProps, type ForecastLayer } from './components/evaluation/ForecastBandsChart/ForecastBandsChart';
+export { forecastHits, type ForecastHit, type ForecastHitSummary } from './components/evaluation/ForecastBandsChart/forecastHits';
+export { ModelContrastBars, type ModelContrastBarsProps } from './components/evaluation/ModelContrastBars/ModelContrastBars';
+export { contrastModels, type ModelContrast, type ModelContrastRow } from './components/evaluation/ModelContrastBars/modelContrast';
+export { RankingSlopeChart, type RankingSlopeChartProps } from './components/evaluation/RankingSlopeChart/RankingSlopeChart';
+export { rankOrder, topOverlap, type RankedItem, type RankPlacement } from './components/evaluation/RankingSlopeChart/rankOrder';
+export { RankGrid, type RankGridItem, type RankGridProps } from './components/evaluation/RankGrid/RankGrid';
+export { rankColumns, type RankScores, type RankTable } from './components/evaluation/RankGrid/ranks';
 export {
     OverflowButton,
     Ping,
