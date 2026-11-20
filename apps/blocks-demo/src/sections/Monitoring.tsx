@@ -1,6 +1,7 @@
 import { MonitoringChart } from '@chap-blocks/ui/charts';
-import { OutbreakMetricsTable } from '@chap-blocks/ui/tables';
-import type { MonitoringSource, OutbreakMetricInfo, OutbreakMetricKind, OutbreakMetricsRow, PredictionSetupMonitoring } from '@chap-blocks/api';
+import { useState } from 'react';
+import { OutbreakMetricsTable, SignalReviewTable, type SignalReview } from '@chap-blocks/ui/tables';
+import { AlertApproval, type AlertRead, type MonitoringSource, OutbreakMetricInfo, OutbreakMetricKind, OutbreakMetricsRow, PredictionSetupMonitoring } from '@chap-blocks/api';
 import { Group, Section } from '../gallery/Section';
 
 const point = (period: string, source: string, value: number, runningValue: number, nObserved: number) => ({
@@ -70,12 +71,63 @@ const outbreakCode = `import { OutbreakMetricsTable } from '@chap-blocks/ui/tabl
   />
 ))}`;
 
+const orgUnitNames = new Map([['bo', 'Bo'], ['kenema', 'Kenema'], ['kono', 'Kono'], ['bombali', 'Bombali']]);
+const SEVERITY: Record<string, number> = { Watch: 1, Alert: 2 };
+const signalSeverity = (alert: AlertRead) => SEVERITY[alert.level] ?? 0;
+let nextId = 1;
+const signal = (orgUnit: string, timePeriod: string, level: string, approved = AlertApproval.PENDING, approvedBy?: string): AlertRead => ({
+    id: nextId++, orgUnit, timePeriod, level, alertPolicyId: 1, approved, approvedBy,
+});
+const initialSignals = [
+    signal('bo', '2025-05', 'Watch'),
+    signal('bo', '2025-06', 'Alert'),
+    signal('kenema', '2025-05', 'Watch'),
+    signal('kenema', '2025-06', 'Watch'),
+    signal('kono', '2025-06', 'Alert'),
+    signal('bombali', '2025-05', 'Alert', AlertApproval.APPROVED, 'district.officer'),
+];
+
+function SignalReviewExample() {
+    const [signals, setSignals] = useState(initialSignals);
+    const onReview = ({ alertIds, decision }: SignalReview) => setSignals(current => current.map(alert => (
+        alertIds.includes(alert.id)
+            ? { ...alert, approved: decision, approvedBy: decision === AlertApproval.PENDING ? null : 'you' }
+            : alert
+    )));
+    return (
+        <SignalReviewTable
+            alerts={signals}
+            orgUnitNames={orgUnitNames}
+            formatPeriod={period => new Date(`${period}-01`).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+            getSeverity={signalSeverity}
+            onReview={onReview}
+        />
+    );
+}
+
+const signalReviewCode = `import { SignalReviewTable } from '@chap-blocks/ui/tables';
+
+// alerts: chap.alerts.listAlerts…(undefined, predictionId)
+const review = useMutation({
+  mutationFn: ({ alertIds, decision }: SignalReview) =>
+    chap.alerts.approveAlerts…({ alertIds, approved: decision, approvedBy: user }),
+});
+
+<SignalReviewTable
+  alerts={alerts}
+  orgUnitNames={new Map(orgUnits.map(ou => [ou.id, ou.name]))}
+  formatPeriod={formatPeriod}
+  getSeverity={alert => severityByLevel[alert.level]}
+  onReview={review.mutate}
+  saving={review.isPending ? review.variables : undefined}
+/>`;
+
 export function MonitoringGroup() {
     return (
         <Group
             id="monitoring"
-            title="Monitoring & outbreak scoring"
-            intro="How a model performs over time against a baseline, and how well a signal policy matches observed outbreaks."
+            title="Monitoring & signals"
+            intro="How a model performs over time against a baseline, how well a signal policy matches observed outbreaks, and reviewing the signals a run raised."
         >
             <Section
                 id="monitoring-chart"
@@ -121,6 +173,29 @@ export function MonitoringGroup() {
                     referenceRow={referenceRow}
                     thresholds={{ Watch: 'Above the 75th percentile', Alert: 'Above the 90th percentile' }}
                 />
+            </Section>
+
+            <Section
+                id="signal-review-table"
+                title="SignalReviewTable"
+                importFrom="@chap-blocks/ui/tables"
+                exports={['SignalReviewTable', 'SignalReview']}
+                description={<p>Approve or decline the signals a prediction run raised, one row per organisation unit. Only pending signals can be selected, so a bulk decision never overturns an earlier review. The host owns the data, the reviewer and saving.</p>}
+                props={[
+                    { name: 'alerts', type: 'AlertRead[]', required: true, description: 'The signals to review, e.g. the alerts of one prediction run.' },
+                    { name: 'orgUnitNames', type: 'ReadonlyMap<string, string>', required: true, description: 'Display names by org unit id; unknown ids show as-is.' },
+                    { name: 'formatPeriod', type: '(period: string) => string', required: true, description: 'Formats a Chap period id.' },
+                    { name: 'onReview', type: '(review: SignalReview) => void', required: true, description: 'Called with the alert ids and the decision (approved, declined or pending again).' },
+                    { name: 'saving', type: 'SignalReview', description: 'The review being saved: its buttons spin and other actions wait.' },
+                    { name: 'disabled', type: 'boolean', description: 'Disables every action, e.g. until the reviewer is known.' },
+                    { name: 'getSeverity', type: '(alert) => number', description: 'Ranks levels, higher being more severe; adds "Select by level".' },
+                    { name: 'renderLevel', type: '(alert) => ReactNode', description: 'Replaces the plain level name, e.g. with a coloured tag.' },
+                    { name: 'renderDetails', type: '(alerts) => ReactNode', description: 'Evidence for an org unit\'s signals; makes rows expandable.' },
+                ]}
+                code={signalReviewCode}
+                wide
+            >
+                <SignalReviewExample />
             </Section>
         </Group>
     );

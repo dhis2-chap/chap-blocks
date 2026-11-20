@@ -25,6 +25,7 @@ export { PredictionMap } from './components/predictions/PredictionMap/Prediction
 export { MonitoringChart, type MonitoringChartProps } from './components/predictions/MonitoringChart/MonitoringChart';
 export { monitoringSeries } from './components/predictions/MonitoringChart/monitoringSeries';
 export { OutbreakMetricsTable, type OutbreakMetricsTableProps } from './components/evaluation/OutbreakMetricsTable/OutbreakMetricsTable';
+export { SignalReviewTable, type SignalReview, type SignalReviewTableProps } from './components/signals/SignalReviewTable';
 export {
     OverflowButton,
     Ping,
