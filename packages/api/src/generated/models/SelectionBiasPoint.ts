@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * One point of a scatter plot of the pick's optimism against the window size or the distance.
+ * One point of a scatter plot of the gap against the window size or the distance.
  */
 export type SelectionBiasPoint = {
     /**
@@ -11,7 +11,7 @@ export type SelectionBiasPoint = {
      */
     'x': number;
     /**
-     * Mean optimism of the pairs at this x, weighted by forecasts scored. On the window-size plot it is adjusted to distance 0, and on the distance plot to the full window size, using the fitted coefficients.
+     * Mean gap of the pairs at this x, weighted by forecasts scored. On the distance plot it is adjusted to the full window size, using the fitted coefficient.
      */
     value: number;
     /**

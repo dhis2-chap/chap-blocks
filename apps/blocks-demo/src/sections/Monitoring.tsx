@@ -47,31 +47,32 @@ const row = (values: number[][], accuracy: number): OutbreakMetricsRow => ({
 const outbreakRow = row([[0.82, 0.41, 0.77, 0.55], [0.6, 0.67, 0.93, 0.63]], 0.78);
 const referenceRow = row([[0.7, 0.38, 0.8, 0.49], [0.45, 0.7, 0.95, 0.55]], 0.74);
 
-// Shaped like a 24-split benchmark: optimism falls with the window size and barely moves with the distance.
-const biasCoefficients = { intercept: 0.004, inverseSqrtK: 0.05, distance: 0.0015 };
+// Shaped like a 24-split benchmark: the gap to the final pick falls with the window size and does not drift.
+const biasCoefficients = { inverseSqrtK: 0.06 };
 const selectionBias: SelectionBias = {
     metricId: 'crps_log1p',
     baselineModel: 'seasonal_shift_persistence',
     comparisonDescription: 'Relative improvement over the reference.',
     horizonDistance: 1,
-    futureSplits: 12,
     splitPeriods: Array.from({ length: 24 }, (_, i) => `${2023 + Math.floor(i / 12)}${String((i % 12) + 1).padStart(2, '0')}`),
     candidates: [],
     selectedBacktestId: 1,
     validationValue: 0.21,
-    estimatedBias: 0.0225,
-    estimatedValue: 0.1875,
-    meanOptimism: 0.035,
+    estimatedBias: biasCoefficients.inverseSqrtK / Math.sqrt(24),
+    estimatedValue: 0.21 - biasCoefficients.inverseSqrtK / Math.sqrt(24),
+    meanGap: 0.03,
     nPairs: 2300,
+    nWindows: 276,
+    nWindowsOtherPick: 96,
     coefficients: biasCoefficients,
     windowSizePoints: Array.from({ length: 23 }, (_, i) => {
         const k = i + 1;
-        const fitted = biasCoefficients.intercept + biasCoefficients.inverseSqrtK / Math.sqrt(k);
-        return { x: k, value: fitted + 0.012 * Math.sin(k * 1.7), fitted, nPairs: (24 - k) * (25 - k) / 2 };
+        const fitted = biasCoefficients.inverseSqrtK / Math.sqrt(k);
+        return { x: k, value: fitted + 0.01 * Math.sin(k * 1.7), fitted, nPairs: (24 - k) * (25 - k) / 2 };
     }),
     distancePoints: Array.from({ length: 23 }, (_, d) => {
-        const fitted = biasCoefficients.intercept + biasCoefficients.inverseSqrtK / Math.sqrt(24) + biasCoefficients.distance * d;
-        return { x: d, value: fitted + 0.01 * Math.cos(d * 2.3), fitted, nPairs: (23 - d) * (24 - d) / 2 };
+        const fitted = biasCoefficients.inverseSqrtK / Math.sqrt(24);
+        return { x: d, value: fitted + 0.008 * Math.cos(d * 2.3), fitted, nPairs: (23 - d) * (24 - d) / 2 };
     }),
 };
 
@@ -179,8 +180,8 @@ const benchmarkSelectionBias: SelectionBias = {
     ],
     selectedBacktestId: 2,
     validationValue: 0.122,
-    estimatedBias: 0.0225,
-    estimatedValue: 0.0995,
+    estimatedBias: 0.0122,
+    estimatedValue: 0.11,
 };
 
 const benchmarkSelectionBiasCode = `import { BenchmarkSelectionBias } from '@chap-blocks/ui/tables';
@@ -309,11 +310,11 @@ export function MonitoringGroup() {
                 title="SelectionBiasChart"
                 importFrom="@chap-blocks/ui/charts"
                 exports={['SelectionBiasChart', 'selectionBiasSeries']}
-                description={<p>How much picking the best model on a benchmark flatters it. Every window of split points picks its best model, scored on the later splits; the optimism is plotted against the window size k or the distance d, with the fitted line and the point the estimated bias is read off.</p>}
+                description={<p>How much picking the best model on a benchmark flatters it. Every window of split points picks its best model; on the later splits it is compared with the model picked on all splits. The gap is plotted against the window size k, with the fitted line and the estimated bias at the full window, or against the distance d as a check that it does not drift.</p>}
                 props={[
                     { name: 'selectionBias', type: 'SelectionBias', required: true, description: 'Response of the backtest-specification selection-bias endpoint.' },
                     { name: 'axis', type: "'windowSize' | 'distance'", required: true, description: 'Plot against the validation window size or the distance to the test split.' },
-                    { name: 'formatValue', type: '(value: number) => string', description: 'Formats an optimism value.' },
+                    { name: 'formatValue', type: '(value: number) => string', description: 'Formats a gap.' },
                     { name: 'height', type: 'number', description: 'Chart height in pixels. Default 300.' },
                 ]}
                 code={selectionBiasCode}

@@ -64,11 +64,11 @@ export const BenchmarkSelectionBias = ({
                     <h3 className={styles.title}>{i18n.t('Selection bias')}</h3>
                     <SelectionBiasSummary selectionBias={selectionBias} pickedName={pickedName} formatValue={format} />
                     <p className={styles.caption}>
-                        {i18n.t('{{metric}} compared with {{baseline}}. The bias is how much of the picked model’s lead is expected to be gone over the next {{count}} splits, estimated from {{pairs}} window and split pairs.', {
+                        {i18n.t('{{metric}} compared with {{baseline}}. The bias is how much of the picked model’s lead is expected to be luck: {{other}} of {{windows}} windows of split points picked another model, and it did worse on the later splits.', {
                             metric: metric?.displayName ?? selectionBias.metricId,
                             baseline: selectionBias.baselineModel,
-                            count: selectionBias.futureSplits,
-                            pairs: selectionBias.nPairs,
+                            other: selectionBias.nWindowsOtherPick,
+                            windows: selectionBias.nWindows,
                         })}
                     </p>
                     {axes.length > 0 && (

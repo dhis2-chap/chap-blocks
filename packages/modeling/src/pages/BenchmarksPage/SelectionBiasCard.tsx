@@ -17,7 +17,7 @@ export const SelectionBiasCard = ({ specification }: Props) => {
         <div>
             <h3 className={styles.cardTitle}>{i18n.t('Selection bias')}</h3>
             <p className={styles.caption}>
-                {i18n.t('The best model on a benchmark looks better than it will be on new data, because part of its lead is luck. Every window of split points picks its best model, which is then scored on the later splits. The difference, the optimism, is fitted against the window size and the distance to the scored split.')}
+                {i18n.t('The best model on a benchmark looks better than it will be on new data, because part of its lead is luck. Every window of split points picks its best model. On the later splits, that pick is compared with the model picked on all splits; the gap is zero when the window picks the same model. The gap is fitted against the window size and read off for all split points.')}
             </p>
         </div>
     );
@@ -39,11 +39,12 @@ export const SelectionBiasCard = ({ specification }: Props) => {
             {header}
             <SelectionBiasSummary selectionBias={bias} formatValue={format} />
             <p className={styles.caption}>
-                {i18n.t('{{metric}} compared with {{baseline}}: {{description}} Bias averaged over the next {{count}} splits, from {{pairs}} window and split pairs.', {
+                {i18n.t('{{metric}} compared with {{baseline}}: {{description}} {{other}} of {{windows}} windows of split points picked another model, from {{pairs}} window and split pairs.', {
                     metric: metric?.displayName ?? bias.metricId,
                     baseline: bias.baselineModel,
                     description: bias.comparisonDescription,
-                    count: bias.futureSplits,
+                    other: bias.nWindowsOtherPick,
+                    windows: bias.nWindows,
                     pairs: bias.nPairs,
                 })}
             </p>

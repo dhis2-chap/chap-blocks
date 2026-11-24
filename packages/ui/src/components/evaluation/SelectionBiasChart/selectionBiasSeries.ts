@@ -5,12 +5,12 @@ export type SelectionBiasAxis = 'windowSize' | 'distance';
 export type SelectionBiasSeriesPoint = { x: number; y: number; custom?: { nPairs: number } };
 
 export type SelectionBiasSeries = {
-    /** Mean optimism at each x, adjusted to distance 0 (window size) or the full window (distance). */
+    /** Mean gap at each x; on the distance axis adjusted to the full window size. */
     points: SelectionBiasSeriesPoint[];
     /** The fitted line, one point per whole x. */
     fitted: SelectionBiasSeriesPoint[];
-    /** Where the estimate is read off: the full window size, or the mean over the next splits. */
-    estimate: SelectionBiasSeriesPoint;
+    /** Where the estimated bias is read off: the full window size. Only on the window-size axis. */
+    estimate?: SelectionBiasSeriesPoint;
 };
 
 const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
@@ -18,25 +18,20 @@ const range = (from: number, to: number) => Array.from({ length: to - from + 1 }
 /**
  * Scatter and fitted line of a selection-bias response along one axis.
  *
- * On the window-size axis the line runs from 1 to the number of split points, where the
- * final pick's window lies, and the estimate is the fit there at distance 0. On the distance
- * axis the line covers the measured distances and the future splits the bias is averaged
- * over, and the estimate is the response's estimated bias at the middle of those splits.
+ * The gap between the final pick and a window's pick is fitted as inverseSqrtK / sqrt(k). On the
+ * window-size axis the line runs from 1 to the number of split points, where the final pick's
+ * window lies and the estimate is read off. On the distance axis the line is flat at the
+ * estimated bias: the gap should not change with the distance, so the points are a check.
  */
 export const selectionBiasSeries = (selectionBias: SelectionBias, axis: SelectionBiasAxis): SelectionBiasSeries => {
-    const { intercept, inverseSqrtK, distance } = selectionBias.coefficients;
+    const { inverseSqrtK } = selectionBias.coefficients;
     const n = selectionBias.splitPeriods.length;
     const source = axis === 'windowSize' ? selectionBias.windowSizePoints : selectionBias.distancePoints;
     const points = source.map(point => ({ x: point.x, y: point.value, custom: { nPairs: point.nPairs } }));
+    const line = (k: number) => inverseSqrtK / Math.sqrt(k);
     if (axis === 'windowSize') {
-        const line = (k: number) => intercept + inverseSqrtK / Math.sqrt(k);
         return { points, fitted: range(1, n).map(k => ({ x: k, y: line(k) })), estimate: { x: n, y: line(n) } };
     }
-    const lastDistance = Math.max(selectionBias.futureSplits - 1, ...source.map(point => point.x));
-    const line = (d: number) => intercept + inverseSqrtK / Math.sqrt(n) + distance * d;
-    return {
-        points,
-        fitted: range(0, lastDistance).map(d => ({ x: d, y: line(d) })),
-        estimate: { x: (selectionBias.futureSplits - 1) / 2, y: selectionBias.estimatedBias },
-    };
+    const lastDistance = Math.max(0, ...source.map(point => point.x));
+    return { points, fitted: range(0, lastDistance).map(d => ({ x: d, y: line(n) })) };
 };

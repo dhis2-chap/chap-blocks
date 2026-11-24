@@ -26,10 +26,6 @@ export type SelectionBias = {
      */
     horizonDistance: number;
     /**
-     * Number of future splits the bias is averaged over.
-     */
-    futureSplits: number;
-    /**
      * Split points used, in order: the periods each split predicted from.
      */
     splitPeriods: Array<string>;
@@ -46,7 +42,7 @@ export type SelectionBias = {
      */
     validationValue: number;
     /**
-     * Fitted optimism of the picked model, averaged over the next `futureSplits` splits.
+     * Fitted gap at the full window size: how much of the picked model's lead is expected to be luck. Zero when every validation window picks the same model.
      */
     estimatedBias: number;
     /**
@@ -54,20 +50,28 @@ export type SelectionBias = {
      */
     estimatedValue: number;
     /**
-     * Mean optimism over all pairs, weighted by forecasts scored. Less noisy than the fit, but biased upwards because most pairs have short windows.
+     * Mean gap over all pairs, weighted by forecasts scored. Higher than the estimated bias, because most pairs have short windows.
      */
-    meanOptimism: number;
+    meanGap: number;
     /**
      * Number of (validation window, test split) pairs.
      */
     nPairs: number;
+    /**
+     * Number of validation windows.
+     */
+    nWindows: number;
+    /**
+     * Number of validation windows that pick another model than the final one.
+     */
+    nWindowsOtherPick: number;
     coefficients: SelectionBiasCoefficients;
     /**
-     * Optimism against window size k, at distance 0.
+     * Gap against window size k.
      */
     windowSizePoints: Array<SelectionBiasPoint>;
     /**
-     * Optimism against distance d, at the full window size.
+     * Gap against distance d, at the full window size. A check: it should be flat.
      */
     distancePoints: Array<SelectionBiasPoint>;
 };

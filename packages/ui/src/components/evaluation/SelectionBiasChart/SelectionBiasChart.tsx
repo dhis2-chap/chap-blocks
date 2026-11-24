@@ -11,25 +11,24 @@ const defaultFormat = (value: number) => value.toLocaleString(undefined, { maxim
 export type SelectionBiasChartProps = {
     /** Response of Chap's backtest-specification selection-bias endpoint. */
     selectionBias: SelectionBias;
-    /** Plot the optimism against the validation window size or against the distance to the test split. */
+    /** Plot the gap against the validation window size or against the distance to the test split. */
     axis: SelectionBiasAxis;
-    /** Formats an optimism value, e.g. as a percentage for skill ratios. */
+    /** Formats a gap, e.g. as a percentage for skill ratios. */
     formatValue?: (value: number) => string;
     height?: number;
 };
 
 /**
- * How much the validation score flatters the picked model, against the validation window size
- * or the distance to the test split: the measured means as points, the fitted line through
- * them, and the point the estimated bias is read off.
+ * The gap between the final pick and each validation window's pick on the later splits, against
+ * the window size or the distance to the test split: the measured means as points and the fitted
+ * line. On the window-size axis the estimated bias is marked at the full window; on the distance
+ * axis the line is flat at the estimated bias, as a check that the gap does not drift.
  */
 export const SelectionBiasChart = ({ selectionBias, axis, formatValue = defaultFormat, height = 300 }: SelectionBiasChartProps) => {
     const series = selectionBiasSeries(selectionBias, axis);
     const n = selectionBias.splitPeriods.length;
     const windowSize = axis === 'windowSize';
-    const estimateName = windowSize
-        ? i18n.t('Final pick ({{count}} splits)', { count: n })
-        : i18n.t('Estimated bias over the next {{count}} splits', { count: selectionBias.futureSplits });
+    const estimateName = i18n.t('Estimated bias (all {{count}} splits)', { count: n });
     const maxPairs = Math.max(1, ...series.points.map(point => point.custom?.nPairs ?? 1));
     const options: Highcharts.Options = {
         chart: { height, style: { fontFamily: 'inherit' } },
@@ -39,15 +38,9 @@ export const SelectionBiasChart = ({ selectionBias, axis, formatValue = defaultF
         xAxis: {
             title: { text: escapeHtml(windowSize ? i18n.t('Validation window size k (splits)') : i18n.t('Distance d after the validation window (splits)')) },
             allowDecimals: false,
-            plotBands: windowSize ? undefined : [{
-                from: -0.5,
-                to: selectionBias.futureSplits - 0.5,
-                color: colors.grey100,
-                label: { text: escapeHtml(i18n.t('Next {{count}} splits', { count: selectionBias.futureSplits })), style: { color: colors.grey700 } },
-            }],
         },
         yAxis: {
-            title: { text: escapeHtml(i18n.t('Optimism (validation minus test)')) },
+            title: { text: escapeHtml(i18n.t('Gap (final pick minus window pick)')) },
             labels: {
                 formatter() {
                     return formatValue(Number(this.value));
@@ -66,15 +59,25 @@ export const SelectionBiasChart = ({ selectionBias, axis, formatValue = defaultF
         series: [
             {
                 type: 'scatter',
-                name: windowSize ? i18n.t('Mean optimism at k (adjusted to d = 0)') : i18n.t('Mean optimism at d (adjusted to k = {{n}})', { n }),
+                name: windowSize ? i18n.t('Mean gap at k') : i18n.t('Mean gap at d (adjusted to k = {{n}})', { n }),
                 color: colors.blue600,
                 data: series.points.map(point => ({
                     ...point,
                     marker: { radius: 3 + 5 * Math.sqrt((point.custom?.nPairs ?? 1) / maxPairs) },
                 })),
             },
-            { type: 'line', name: i18n.t('Fitted line'), color: colors.blue800, marker: { enabled: false }, data: series.fitted, enableMouseTracking: false },
-            { type: 'scatter', name: estimateName, color: colors.red600, marker: { symbol: 'diamond', radius: 7 }, data: [series.estimate] },
+            {
+                type: 'line',
+                name: windowSize ? i18n.t('Fitted line') : i18n.t('Estimated bias'),
+                color: windowSize ? colors.blue800 : colors.red600,
+                dashStyle: windowSize ? 'Solid' : 'Dash',
+                marker: { enabled: false },
+                data: series.fitted,
+                enableMouseTracking: false,
+            },
+            ...(series.estimate
+                ? [{ type: 'scatter' as const, name: estimateName, color: colors.red600, marker: { symbol: 'diamond', radius: 7 }, data: [series.estimate] }]
+                : []),
         ],
     };
     return <HighchartsReact highcharts={Highcharts} options={options} />;
