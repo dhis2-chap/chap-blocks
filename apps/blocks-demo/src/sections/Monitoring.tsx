@@ -1,6 +1,6 @@
 import { MonitoringChart, SelectionBiasChart } from '@chap-blocks/ui/charts';
 import { useState } from 'react';
-import { BenchmarkTable, OutbreakMetricsTable, SignalReviewTable, type BenchmarkTableRun, type SignalReview } from '@chap-blocks/ui/tables';
+import { BenchmarkSelectionBias, BenchmarkTable, OutbreakMetricsTable, SignalReviewTable, type BenchmarkTableRun, type SelectionBiasCharts, type SignalReview } from '@chap-blocks/ui/tables';
 import { AlertApproval, type AlertRead, type MetricInfo, type MonitoringSource, OutbreakMetricInfo, OutbreakMetricKind, OutbreakMetricsRow, PredictionSetupMonitoring, type SelectionBias } from '@chap-blocks/api';
 import { Group, Section } from '../gallery/Section';
 
@@ -170,6 +170,31 @@ const benchmarkRuns: BenchmarkTableRun[] = [
     { id: 3, name: 'MSTL ARIMA', version: '0.4', aggregateMetrics: { crps_log1p: 0.44, mae: 17.1, coverage_10_90: 0.86 }, comparison: { crps_log1p: -0.073, mae: 0.06, coverage_10_90: 0 } },
 ];
 
+// The same benchmark with its selection bias: Auto-regressive is picked, 12.2% better than Seasonal naive.
+const benchmarkSelectionBias: SelectionBias = {
+    ...selectionBias,
+    candidates: [
+        { backtestId: 2, configuredModelId: 2, modelName: 'Auto-regressive', validationValue: 0.122 },
+        { backtestId: 3, configuredModelId: 3, modelName: 'MSTL ARIMA', validationValue: -0.073 },
+    ],
+    selectedBacktestId: 2,
+    validationValue: 0.122,
+    estimatedBias: 0.0225,
+    estimatedValue: 0.0995,
+};
+
+const benchmarkSelectionBiasCode = `import { BenchmarkSelectionBias } from '@chap-blocks/ui/tables';
+
+// The table's props as for BenchmarkTable, plus the selection-bias response
+<BenchmarkSelectionBias
+  runs={runs}
+  metricIds={['crps_log1p', 'mae', 'coverage_10_90']}
+  metrics={specification.metrics}
+  reference={{ name: 'Seasonal naive', runId: baselineRunId }}
+  selectionBias={selectionBias}   // chap.backtests.getBacktestSpecificationSelectionBias…(specificationId)
+  charts="both"                   // 'none' (default), 'windowSize', 'distance' or 'both'
+/>`;
+
 const benchmarkCode = `import { BenchmarkTable } from '@chap-blocks/ui/tables';
 
 // runs from chap.backtests…getBacktestSpecification…(id).backtests, named by their configured model
@@ -181,6 +206,7 @@ const benchmarkCode = `import { BenchmarkTable } from '@chap-blocks/ui/tables';
 />`;
 
 export function MonitoringGroup() {
+    const [biasCharts, setBiasCharts] = useState<SelectionBiasCharts>('both');
     return (
         <Group
             id="monitoring"
@@ -297,6 +323,39 @@ export function MonitoringGroup() {
                     <SelectionBiasChart selectionBias={selectionBias} axis="windowSize" formatValue={percent} />
                     <SelectionBiasChart selectionBias={selectionBias} axis="distance" formatValue={percent} />
                 </div>
+            </Section>
+            <Section
+                id="benchmark-selection-bias"
+                title="BenchmarkSelectionBias"
+                importFrom="@chap-blocks/ui/tables"
+                exports={['BenchmarkSelectionBias', 'SelectionBiasSummary', 'selectionBiasSummary']}
+                description={<p>A benchmark's model runs with the selection bias of the best one: the benchmark table, then the picked model, its score on the benchmark, the estimated bias and what to expect on new data, and optionally the plots the estimate is read off. <code>SelectionBiasSummary</code> is the four numbers on their own.</p>}
+                props={[
+                    { name: '…BenchmarkTableProps', type: 'BenchmarkTableProps', required: true, description: 'runs, metricIds, metrics, reference and the rest, passed to BenchmarkTable.' },
+                    { name: 'selectionBias', type: 'SelectionBias | null', description: 'Response of the selection-bias endpoint. Without it only the table is shown.' },
+                    { name: 'selectionBiasNotice', type: 'ReactNode', description: 'Shown instead of the selection bias, e.g. while loading or when Chap says what is missing.' },
+                    { name: 'charts', type: "'none' | 'windowSize' | 'distance' | 'both'", description: "Which plots to show under the summary. Default 'none'." },
+                    { name: 'pickedName', type: 'string', description: 'Display name of the picked model; defaults to the candidate name in the response.' },
+                    { name: 'formatValue', type: '(value: number) => string', description: "Formats comparison values. Defaults to the metric's own format." },
+                    { name: 'chartHeight', type: 'number', description: 'Height of each plot in pixels. Default 300.' },
+                ]}
+                code={benchmarkSelectionBiasCode}
+                wide
+            >
+                <label style={{ display: 'inline-flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+                    charts
+                    <select value={biasCharts} onChange={event => setBiasCharts(event.target.value as SelectionBiasCharts)}>
+                        {(['none', 'windowSize', 'distance', 'both'] as const).map(value => <option key={value} value={value}>{value}</option>)}
+                    </select>
+                </label>
+                <BenchmarkSelectionBias
+                    runs={benchmarkRuns}
+                    metricIds={['crps_log1p', 'mae', 'coverage_10_90']}
+                    metrics={benchmarkMetrics}
+                    reference={{ name: 'Seasonal naive', runId: 1 }}
+                    selectionBias={benchmarkSelectionBias}
+                    charts={biasCharts}
+                />
             </Section>
         </Group>
     );

@@ -49,6 +49,7 @@ const NAV: NavGroup[] = [
             { id: 'signal-review-table', label: 'SignalReviewTable' },
             { id: 'benchmark-table', label: 'BenchmarkTable' },
             { id: 'selection-bias-chart', label: 'SelectionBiasChart' },
+            { id: 'benchmark-selection-bias', label: 'BenchmarkSelectionBias' },
         ],
     },
     {
@@ -93,7 +94,7 @@ const NAV: NavGroup[] = [
 const ENTRYPOINTS = [
     ['@chap-blocks/ui/charts', 'UncertaintyAreaChart, ResultPlot, ComparisonPlot, MonitoringChart, SelectionBiasChart, ForecastBandsChart, ModelContrastBars, RankGrid, RankingSlopeChart, view-model helpers'],
     ['@chap-blocks/ui/maps', 'PredictionMap, parseOrgUnits, FeatureCollection, BasemapConfig'],
-    ['@chap-blocks/ui/tables', 'PredictionTable, OutbreakMetricsTable, SignalReviewTable, BenchmarkTable'],
+    ['@chap-blocks/ui/tables', 'PredictionTable, OutbreakMetricsTable, SignalReviewTable, BenchmarkTable, BenchmarkSelectionBias, SelectionBiasSummary'],
     ['@chap-blocks/ui/layout', 'Card, Widget, Pill, Tag, Ping, StatusIndicator, OverflowButton, PeriodPicker, PeriodRangeField'],
     ['@chap-blocks/ui/search', 'SearchField (React only)'],
     ['@chap-blocks/ui', 'Everything above plus Sidenav, evaluation lists, threshold and outbreak helpers'],

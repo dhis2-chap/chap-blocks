@@ -2,6 +2,7 @@ import i18n from '@dhis2/d2-i18n';
 import { CircularLoader, NoticeBox } from '@dhis2/ui';
 import type { BacktestSpecificationRead } from '@chap-blocks/api';
 import { SelectionBiasChart } from '@chap-blocks/ui/charts';
+import { SelectionBiasSummary } from '@chap-blocks/ui/tables';
 import { formatComparison } from '@chap-blocks/ui/metrics';
 import { ChapErrorNotice } from '../../components/ChapErrorNotice';
 import { useSelectionBias } from './useSelectionBias';
@@ -33,16 +34,10 @@ export const SelectionBiasCard = ({ specification }: Props) => {
     const bias = query.data;
     const metric = specification.metrics?.find(info => info.id === bias.metricId);
     const format = (value: number) => formatComparison(value, metric);
-    const picked = bias.candidates.find(candidate => candidate.backtestId === bias.selectedBacktestId);
     return (
         <>
             {header}
-            <dl className={styles.selectionBiasSummary}>
-                <div><dt>{i18n.t('Picked model')}</dt><dd>{picked?.modelName ?? `#${bias.selectedBacktestId}`}</dd></div>
-                <div><dt>{i18n.t('On the benchmark')}</dt><dd>{format(bias.validationValue)}</dd></div>
-                <div><dt>{i18n.t('Estimated bias')}</dt><dd>{format(bias.estimatedBias)}</dd></div>
-                <div><dt>{i18n.t('Expected on new data')}</dt><dd>{format(bias.estimatedValue)}</dd></div>
-            </dl>
+            <SelectionBiasSummary selectionBias={bias} formatValue={format} />
             <p className={styles.caption}>
                 {i18n.t('{{metric}} compared with {{baseline}}: {{description}} Bias averaged over the next {{count}} splits, from {{pairs}} window and split pairs.', {
                     metric: metric?.displayName ?? bias.metricId,
