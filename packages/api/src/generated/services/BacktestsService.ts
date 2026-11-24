@@ -17,6 +17,7 @@ import type { MakeBacktestRequest } from '../models/MakeBacktestRequest';
 import type { MakeBacktestsRequest } from '../models/MakeBacktestsRequest';
 import type { MakeBacktestsResponse } from '../models/MakeBacktestsResponse';
 import type { MakeBacktestWithDataRequest } from '../models/MakeBacktestWithDataRequest';
+import type { SelectionBias } from '../models/SelectionBias';
 import type { WeatherProviderInfo } from '../models/WeatherProviderInfo';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -568,6 +569,54 @@ export class BacktestsService {
         return this.httpRequest.request({
             method: 'GET',
             url: '/v1/analytics/weather-providers',
+        });
+    }
+    /**
+     * Estimate how much picking the best model on a specification flatters it
+     * Estimate the selection bias of the model with the best comparison with the baseline over all split points.
+     *
+     * Runs a nested scheme on the specification's own split points: every window of consecutive
+     * splits picks its best model, and the pick is scored on every later split. The pick's
+     * optimism (validation value minus test value) is fitted as
+     * ``intercept + inverseSqrtK / sqrt(k) + distance * d``, with ``k`` the window size and ``d``
+     * the splits between the window and the test split. The estimated bias is the fit at the
+     * full window size, averaged over the next ``futureSplits`` splits. ``windowSizePoints`` and
+     * ``distancePoints`` hold the data for the two scatter plots with their fitted lines.
+     *
+     * Candidates are the newest backtest of each model on the leaderboard, scored on the
+     * forecasts all of them and the baseline made. 404 if the specification is unknown, 422 if
+     * the metric or baseline is unknown or unsuitable, the baseline has not run, or there are
+     * fewer than two models or three split points.
+     * @param specificationId
+     * @param metric Id of a mean-aggregated metric with a comparison operator, e.g. 'crps_log1p'.
+     * @param baseline Name of the baseline model to compare with. Defaults to the installation's default.
+     * @param horizonDistance Horizon distance whose forecasts are scored.
+     * @param futureSplits Number of future splits the estimated bias is averaged over.
+     * @returns SelectionBias Successful Response
+     * @throws ApiError
+     */
+    public getBacktestSpecificationSelectionBiasV1CrudBacktestSpecificationsSpecificationIdSelectionBiasGet(
+        specificationId: number,
+        metric: string = 'crps_log1p',
+        baseline?: (string | null),
+        horizonDistance: number = 1,
+        futureSplits: number = 12,
+    ): CancelablePromise<SelectionBias> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/v1/crud/backtest-specifications/{specificationId}/selection-bias',
+            path: {
+                'specificationId': specificationId,
+            },
+            query: {
+                'metric': metric,
+                'baseline': baseline,
+                'horizonDistance': horizonDistance,
+                'futureSplits': futureSplits,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
 }

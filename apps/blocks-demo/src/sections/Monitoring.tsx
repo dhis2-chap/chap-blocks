@@ -1,7 +1,7 @@
-import { MonitoringChart } from '@chap-blocks/ui/charts';
+import { MonitoringChart, SelectionBiasChart } from '@chap-blocks/ui/charts';
 import { useState } from 'react';
 import { BenchmarkTable, OutbreakMetricsTable, SignalReviewTable, type BenchmarkTableRun, type SignalReview } from '@chap-blocks/ui/tables';
-import { AlertApproval, type AlertRead, type MetricInfo, type MonitoringSource, OutbreakMetricInfo, OutbreakMetricKind, OutbreakMetricsRow, PredictionSetupMonitoring } from '@chap-blocks/api';
+import { AlertApproval, type AlertRead, type MetricInfo, type MonitoringSource, OutbreakMetricInfo, OutbreakMetricKind, OutbreakMetricsRow, PredictionSetupMonitoring, type SelectionBias } from '@chap-blocks/api';
 import { Group, Section } from '../gallery/Section';
 
 const point = (period: string, source: string, value: number, runningValue: number, nObserved: number) => ({
@@ -46,6 +46,42 @@ const row = (values: number[][], accuracy: number): OutbreakMetricsRow => ({
 
 const outbreakRow = row([[0.82, 0.41, 0.77, 0.55], [0.6, 0.67, 0.93, 0.63]], 0.78);
 const referenceRow = row([[0.7, 0.38, 0.8, 0.49], [0.45, 0.7, 0.95, 0.55]], 0.74);
+
+// Shaped like a 24-split benchmark: optimism falls with the window size and barely moves with the distance.
+const biasCoefficients = { intercept: 0.004, inverseSqrtK: 0.05, distance: 0.0015 };
+const selectionBias: SelectionBias = {
+    metricId: 'crps_log1p',
+    baselineModel: 'seasonal_shift_persistence',
+    comparisonDescription: 'Relative improvement over the reference.',
+    horizonDistance: 1,
+    futureSplits: 12,
+    splitPeriods: Array.from({ length: 24 }, (_, i) => `${2023 + Math.floor(i / 12)}${String((i % 12) + 1).padStart(2, '0')}`),
+    candidates: [],
+    selectedBacktestId: 1,
+    validationValue: 0.21,
+    estimatedBias: 0.0225,
+    estimatedValue: 0.1875,
+    meanOptimism: 0.035,
+    nPairs: 2300,
+    coefficients: biasCoefficients,
+    windowSizePoints: Array.from({ length: 23 }, (_, i) => {
+        const k = i + 1;
+        const fitted = biasCoefficients.intercept + biasCoefficients.inverseSqrtK / Math.sqrt(k);
+        return { x: k, value: fitted + 0.012 * Math.sin(k * 1.7), fitted, nPairs: (24 - k) * (25 - k) / 2 };
+    }),
+    distancePoints: Array.from({ length: 23 }, (_, d) => {
+        const fitted = biasCoefficients.intercept + biasCoefficients.inverseSqrtK / Math.sqrt(24) + biasCoefficients.distance * d;
+        return { x: d, value: fitted + 0.01 * Math.cos(d * 2.3), fitted, nPairs: (23 - d) * (24 - d) / 2 };
+    }),
+};
+
+const percent = (value: number) => value.toLocaleString(undefined, { style: 'percent', maximumSignificantDigits: 3, signDisplay: 'exceptZero' });
+
+const selectionBiasCode = `import { SelectionBiasChart } from '@chap-blocks/ui/charts';
+
+// From chap.backtests.getBacktestSpecificationSelectionBias…(specificationId)
+<SelectionBiasChart selectionBias={selectionBias} axis="windowSize" />
+<SelectionBiasChart selectionBias={selectionBias} axis="distance" />`;
 
 const monitoringCode = `import { MonitoringChart } from '@chap-blocks/ui/charts';
 
@@ -241,6 +277,26 @@ export function MonitoringGroup() {
             >
                 <BenchmarkTable runs={benchmarkRuns} metricIds={['crps_log1p', 'mae', 'coverage_10_90']} metrics={benchmarkMetrics} />
                 <BenchmarkTable runs={benchmarkRuns} metricIds={['crps_log1p', 'mae', 'coverage_10_90']} metrics={benchmarkMetrics} reference={{ name: 'Seasonal naive', runId: 1 }} />
+            </Section>
+            <Section
+                id="selection-bias-chart"
+                title="SelectionBiasChart"
+                importFrom="@chap-blocks/ui/charts"
+                exports={['SelectionBiasChart', 'selectionBiasSeries']}
+                description={<p>How much picking the best model on a benchmark flatters it. Every window of split points picks its best model, scored on the later splits; the optimism is plotted against the window size k or the distance d, with the fitted line and the point the estimated bias is read off.</p>}
+                props={[
+                    { name: 'selectionBias', type: 'SelectionBias', required: true, description: 'Response of the backtest-specification selection-bias endpoint.' },
+                    { name: 'axis', type: "'windowSize' | 'distance'", required: true, description: 'Plot against the validation window size or the distance to the test split.' },
+                    { name: 'formatValue', type: '(value: number) => string', description: 'Formats an optimism value.' },
+                    { name: 'height', type: 'number', description: 'Chart height in pixels. Default 300.' },
+                ]}
+                code={selectionBiasCode}
+                wide
+            >
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+                    <SelectionBiasChart selectionBias={selectionBias} axis="windowSize" formatValue={percent} />
+                    <SelectionBiasChart selectionBias={selectionBias} axis="distance" formatValue={percent} />
+                </div>
             </Section>
         </Group>
     );

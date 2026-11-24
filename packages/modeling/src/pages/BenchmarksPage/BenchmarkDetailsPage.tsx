@@ -12,6 +12,7 @@ import { BenchmarkRunsIndicator } from './BenchmarkRunsIndicator';
 import { useRunningBenchmarkJobs } from './useRunningBenchmarkJobs';
 import { isValidSpecificationId, useBacktestSpecification } from './useBacktestSpecification';
 import { SpecificationSummary } from './SpecificationParameters';
+import { SelectionBiasCard } from './SelectionBiasCard';
 import styles from './BenchmarksPage.module.css';
 
 export const BenchmarkDetailsPage = () => {
@@ -97,6 +98,11 @@ const BenchmarkDetails = ({ id }: { id: number }) => {
                         )}
                     </BenchmarkTable>
                 </Card>
+                {specification.backtests.length >= 2 && (
+                    <Card className={styles.card}>
+                        <SelectionBiasCard specification={specification} />
+                    </Card>
+                )}
             </div>
         </>
     );
