@@ -13,3 +13,6 @@ export { RankingSlopeChart, type RankingSlopeChartProps } from './components/eva
 export { rankOrder, topOverlap, type RankedItem, type RankPlacement } from './components/evaluation/RankingSlopeChart/rankOrder';
 export { RankGrid, type RankGridItem, type RankGridProps } from './components/evaluation/RankGrid/RankGrid';
 export { rankColumns, type RankScores, type RankTable } from './components/evaluation/RankGrid/ranks';
+export { SelectionBiasChart, type SelectionBiasChartProps } from './components/evaluation/SelectionBiasChart/SelectionBiasChart';
+export { selectionBiasSeries, type SelectionBiasAxis, type SelectionBiasSeries } from './components/evaluation/SelectionBiasChart/selectionBiasSeries';
+export { selectionBiasHorizons } from './components/evaluation/SelectionBiasChart/selectionBiasHorizons';

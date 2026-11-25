@@ -1,0 +1,47 @@
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacers-dp16);
+}
+
+.summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacers-dp24);
+    margin: 0;
+}
+
+.summary dt {
+    font-size: 13px;
+    color: var(--colors-grey700);
+}
+
+.summary dd {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--colors-grey900);
+}
+
+/* The number to report: the value expected on new data. */
+.summary .expected dd {
+    color: var(--colors-green800);
+}
+
+.title {
+    margin: 0 0 var(--spacers-dp4);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.caption {
+    margin: 0;
+    font-size: 13px;
+    color: var(--colors-grey700);
+}
+
+.charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--spacers-dp16);
+}

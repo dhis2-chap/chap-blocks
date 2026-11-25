@@ -27,6 +27,8 @@ export { monitoringSeries } from './components/predictions/MonitoringChart/monit
 export { OutbreakMetricsTable, type OutbreakMetricsTableProps } from './components/evaluation/OutbreakMetricsTable/OutbreakMetricsTable';
 export { SignalReviewTable, type SignalReview, type SignalReviewTableProps } from './components/signals/SignalReviewTable';
 export { BenchmarkTable, type BenchmarkTableProps, type BenchmarkTableRun } from './components/evaluation/BenchmarkTable/BenchmarkTable';
+export { BenchmarkSelectionBias, SelectionBiasSummary, type BenchmarkSelectionBiasProps, type SelectionBiasCharts, type SelectionBiasSummaryProps } from './components/evaluation/BenchmarkSelectionBias/BenchmarkSelectionBias';
+export { selectionBiasSummary, type SelectionBiasSummaryValues } from './components/evaluation/BenchmarkSelectionBias/selectionBiasSummary';
 export * from './metrics';
 export { ForecastBandsChart, type ForecastBandsChartProps, type ForecastLayer } from './components/evaluation/ForecastBandsChart/ForecastBandsChart';
 export { forecastHits, type ForecastHit, type ForecastHitSummary } from './components/evaluation/ForecastBandsChart/forecastHits';
@@ -36,6 +38,9 @@ export { RankingSlopeChart, type RankingSlopeChartProps } from './components/eva
 export { rankOrder, topOverlap, type RankedItem, type RankPlacement } from './components/evaluation/RankingSlopeChart/rankOrder';
 export { RankGrid, type RankGridItem, type RankGridProps } from './components/evaluation/RankGrid/RankGrid';
 export { rankColumns, type RankScores, type RankTable } from './components/evaluation/RankGrid/ranks';
+export { SelectionBiasChart, type SelectionBiasChartProps } from './components/evaluation/SelectionBiasChart/SelectionBiasChart';
+export { selectionBiasSeries, type SelectionBiasAxis, type SelectionBiasSeries } from './components/evaluation/SelectionBiasChart/selectionBiasSeries';
+export { selectionBiasHorizons } from './components/evaluation/SelectionBiasChart/selectionBiasHorizons';
 export {
     OverflowButton,
     Ping,

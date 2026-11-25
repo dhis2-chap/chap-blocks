@@ -17,6 +17,7 @@ import type { MakeBacktestRequest } from '../models/MakeBacktestRequest';
 import type { MakeBacktestsRequest } from '../models/MakeBacktestsRequest';
 import type { MakeBacktestsResponse } from '../models/MakeBacktestsResponse';
 import type { MakeBacktestWithDataRequest } from '../models/MakeBacktestWithDataRequest';
+import type { SelectionBias } from '../models/SelectionBias';
 import type { WeatherProviderInfo } from '../models/WeatherProviderInfo';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -568,6 +569,57 @@ export class BacktestsService {
         return this.httpRequest.request({
             method: 'GET',
             url: '/v1/analytics/weather-providers',
+        });
+    }
+    /**
+     * Estimate how much picking the best model on a specification flatters it
+     * **Needs `read:backtests`.**
+     *
+     * Estimate the selection bias of the model with the best comparison with the baseline over all split points.
+     *
+     * Runs a nested scheme on the specification's own split points: every window of consecutive
+     * splits picks its best model, and on every later split that pick is compared with the final
+     * model, the one picked on all splits. The gap (final model's value minus the pick's value on
+     * that split) is zero when the window picks the final model. It is fitted as
+     * ``inverseSqrtK / sqrt(k)``, with ``k`` the window size, and the estimated bias is the fit at
+     * the full window size. A model that wins every window has no selection bias.
+     * ``windowSizePoints`` and ``distancePoints`` hold the data for the two scatter plots; the gap
+     * against the distance ``d`` to the test split is a check and should be flat.
+     *
+     * Candidates are the newest backtest of each model on the leaderboard, scored on the
+     * forecasts all of them and the baseline made, at every horizon distance unless
+     * ``horizonDistance`` picks one. With several horizon distances, the test splits start
+     * ``gapSplits`` (largest minus smallest horizon distance) splits after each window, so
+     * window and test splits share no target period. 404 if the specification is unknown, 422 if
+     * the metric or baseline is unknown or unsuitable, the baseline has not run, or there are
+     * fewer than two models or 3 + gapSplits split points.
+     * @param specificationId
+     * @param metric Id of a mean-aggregated metric with a comparison operator, e.g. 'crps_log1p'.
+     * @param baseline Name of the baseline model to compare with. Defaults to the installation's default.
+     * @param horizonDistance Score only this horizon distance. By default every horizon distance is scored, as on the leaderboard.
+     * @returns SelectionBias Successful Response
+     * @throws ApiError
+     */
+    public getBacktestSpecificationSelectionBiasV1CrudBacktestSpecificationsSpecificationIdSelectionBiasGet(
+        specificationId: number,
+        metric: string = 'crps_log1p',
+        baseline?: (string | null),
+        horizonDistance?: (number | null),
+    ): CancelablePromise<SelectionBias> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/v1/crud/backtest-specifications/{specificationId}/selection-bias',
+            path: {
+                'specificationId': specificationId,
+            },
+            query: {
+                'metric': metric,
+                'baseline': baseline,
+                'horizonDistance': horizonDistance,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
 }
