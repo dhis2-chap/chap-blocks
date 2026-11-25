@@ -41,16 +41,22 @@ const datasets = await chap.datasets.getDatasetsV1CrudDatasetsGet();
 ## Use the blocks in another repository
 
 The packages are **not published to npm**. They export TypeScript source, so another repository adds this one as a
-pinned **git submodule** and makes its packages part of its own pnpm workspace. There's no build or publish step, and
-imports are the same as here. [dhis2-chap/learning-material](https://github.com/dhis2-chap/learning-material) works this way.
+pinned **git submodule** and resolves the packages from it. There's no build or publish step, and imports are the same
+as here. [dhis2-chap/learning-material](https://github.com/dhis2-chap/learning-material) works this way.
 
-1. Add the submodule, tracking `main`:
+Add the submodule, tracking `main`:
 
-   ```sh
-   git submodule add -b main https://github.com/dhis2-chap/chap-blocks.git vendor/chap-blocks
-   ```
+```sh
+git submodule add -b main https://github.com/dhis2-chap/chap-blocks.git vendor/chap-blocks
+```
 
-2. Add its packages to `pnpm-workspace.yaml`, next to your own:
+Clone with `git clone --recurse-submodules …` (or run `git submodule update --init` afterwards). Then follow the steps
+for your package manager. The packages depend on each other with pnpm's `workspace:*` protocol, which npm and yarn 1
+cannot read, so those repositories link the packages with a script instead.
+
+### pnpm
+
+1. Add the packages to `pnpm-workspace.yaml`, next to your own:
 
    ```yaml
    packages:
@@ -58,35 +64,64 @@ imports are the same as here. [dhis2-chap/learning-material](https://github.com/
      - vendor/chap-blocks/packages/*
    ```
 
-3. Depend on the blocks you use, with `workspace:*`, and run `pnpm install`:
+2. Depend on the blocks you use, with `workspace:*`, and run `pnpm install`:
 
    ```json
    "dependencies": { "@chap-blocks/ui": "workspace:*", "@chap-blocks/api": "workspace:*" }
    ```
 
-4. Build with the same Vite settings as these apps (React, the `/chap-api` development proxy, map-library hints,
-   one React instance):
+### npm or yarn 1
 
-   ```ts
-   // vite.config.ts
-   import { chapAppConfig } from './vendor/chap-blocks/deploy/vite-app.config';
-   export default chapAppConfig({ port: 5190 });
-   ```
-
-   The config imports `vite` and `@vitejs/plugin-react` from your repository, so list both as devDependencies in your
-   **root** `package.json`. If you use `@chap-blocks/modeling`, its guides are MDX: add the MDX plugin and
-   `publicDir` the way [`apps/reference/vite.config.ts`](apps/reference/vite.config.ts) does.
-
-5. For `tsc`, include the blocks' ambient module declarations in your `tsconfig.json`:
+1. Do not list `@chap-blocks/*` in `package.json` or in your workspaces. Instead, run
+   [`scripts/link-blocks.mjs`](scripts/link-blocks.mjs) with the packages you import, before anything that builds,
+   serves or tests:
 
    ```json
-   "include": ["src", "vendor/chap-blocks/packages/ui/src/Globals.d.tsx", "vendor/chap-blocks/packages/modeling/src/Globals.d.ts", "vendor/chap-blocks/packages/modeling/src/mdx.d.ts"]
+   "scripts": {
+     "postinstall": "node vendor/chap-blocks/scripts/link-blocks.mjs ui",
+     "prestart": "node vendor/chap-blocks/scripts/link-blocks.mjs ui",
+     "prebuild": "node vendor/chap-blocks/scripts/link-blocks.mjs ui",
+     "pretest": "node vendor/chap-blocks/scripts/link-blocks.mjs ui"
+   }
    ```
 
-   Mount `CssVariables` from `@dhis2/ui` once in your app (see [reuse](docs/reuse.md) for providers and which package gives what).
+   It symlinks the named packages, and the chap-blocks packages they use, into `node_modules/@chap-blocks/`. npm removes
+   those links whenever it installs a package and doesn't run `postinstall` then, which is why the `pre*` scripts
+   run it too.
 
-Clone with `git clone --recurse-submodules …` (or run `git submodule update --init` afterwards). This repository is
-private, so everyone who clones needs read access to it.
+2. Run `npm install` (or `yarn`). The first time, the script stops and prints an `npm install …` (or `yarn add …`)
+   command with the third-party dependencies the blocks need, such as `@dhis2/ui` and `date-fns`. Run it: imports from the
+   linked source resolve to your `node_modules`, so your `package.json` must provide them. After an update that adds
+   a dependency, the script stops again with the new command.
+
+### Build and types
+
+- **Vite:** build with the same settings as these apps (React, the `/chap-api` development proxy, map-library hints,
+  one React instance):
+
+  ```ts
+  // vite.config.ts
+  import { chapAppConfig } from './vendor/chap-blocks/deploy/vite-app.config';
+  export default chapAppConfig({ port: 5190 });
+  ```
+
+  The config imports `vite` and `@vitejs/plugin-react` from your repository, so list both as devDependencies in your
+  **root** `package.json`. If you use `@chap-blocks/modeling`, its guides are MDX: add the MDX plugin and
+  `publicDir` the way [`apps/reference/vite.config.ts`](apps/reference/vite.config.ts) does.
+- **DHIS2 App Platform** (`d2-app-scripts`): no build configuration is needed. `d2-app-scripts build` and `start` compile
+  the blocks' TypeScript, JSX and CSS Modules as they are. This was tested with `@chap-blocks/ui/datasets` in apps
+  created by `d2-app-scripts init --typescript` with pnpm, npm and yarn 1. Map blocks were not tested there.
+- **TypeScript:** set `"moduleResolution": "bundler"` (package subpaths such as `@chap-blocks/ui/datasets` need it) and
+  `"jsx": "react-jsx"`, and include the blocks' ambient module declarations:
+
+  ```json
+  "include": ["src", "vendor/chap-blocks/packages/ui/src/Globals.d.tsx", "vendor/chap-blocks/packages/modeling/src/Globals.d.ts", "vendor/chap-blocks/packages/modeling/src/mdx.d.ts"]
+  ```
+
+  `tsc` checks the blocks' source with your settings. It passes here (strict, `@types/react` 18) and with the App
+  Platform template's settings (`@types/react` 19).
+
+Mount `CssVariables` from `@dhis2/ui` once in your app (see [reuse](docs/reuse.md) for providers and which package gives what).
 
 ### Keeping up to date
 
@@ -95,8 +130,21 @@ Your repository pins an exact chap-blocks commit, so a push here never changes a
 ```sh
 git submodule update --remote vendor/chap-blocks   # move to the tip of main
 git -C vendor/chap-blocks log --oneline ORIG_HEAD..HEAD
-pnpm install && pnpm check                          # your own checks
+pnpm install && pnpm check                          # or npm/yarn, and your own checks
 git add vendor/chap-blocks pnpm-lock.yaml && git commit -m "chore: update chap-blocks"
+```
+
+To get a pull request whenever `main` moves, let Dependabot watch the submodule in your repository. Your CI then
+runs on each update before anyone merges it:
+
+```yaml
+# .github/dependabot.yml
+version: 2
+updates:
+  - package-ecosystem: gitsubmodule
+    directory: /
+    schedule:
+      interval: weekly
 ```
 
 To roll back, check out the previous commit in `vendor/chap-blocks` and commit that. Change the blocks here, never
@@ -162,4 +210,4 @@ The Vite proxy is for development. For deployment, configure your reverse proxy 
 
 The checked-in OpenAPI snapshot targets Chap Core `2.7.0.dev0`. Regenerate with `pnpm api:generate`; see [API maintenance](packages/api/README.md). Server-version feature checks from the modeling app are retained.
 
-Extracted source and its revision are recorded in [UPSTREAM.md](UPSTREAM.md). Original license notices are preserved; this private repository has not published packages or changed upstream licensing. Highcharts retains its own licensing terms.
+Extracted source and its revision are recorded in [UPSTREAM.md](UPSTREAM.md). Original license notices are preserved; this repository has not published packages or changed upstream licensing. Highcharts retains its own licensing terms.

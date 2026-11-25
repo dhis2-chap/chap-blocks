@@ -1,6 +1,6 @@
 # Reuse a block
 
-The repository is private and no package has been published. Add it to your repository as a git submodule and put `vendor/chap-blocks/packages/*` in your pnpm workspace ([steps](../README.md#use-the-blocks-in-another-repository)); a package's name and `workspace:*` dependencies then resolve unchanged. Source exports require TypeScript/JSX and CSS Module support; the included Vite apps show the full setup.
+No package has been published. Add this repository to yours as a git submodule. Then put `vendor/chap-blocks/packages/*` in your pnpm workspace, or with npm or yarn 1 link the packages with `scripts/link-blocks.mjs` ([steps](../README.md#use-the-blocks-in-another-repository)). Package names and subpaths then resolve unchanged. Source exports require TypeScript/JSX and CSS Module support: Vite and the DHIS2 App Platform (`d2-app-scripts`) build them without extra configuration.
 
 | Want | Packages | Import |
 | --- | --- | --- |
@@ -8,10 +8,11 @@ The repository is private and no package has been published. Add it to your repo
 | Typed API calls | `packages/api` | `@chap-blocks/api` |
 | Calendar helpers | `packages/core` | `@chap-blocks/core` |
 | Charts/maps/tables/layout | `packages/ui`, `packages/core`, `packages/api` | `@chap-blocks/ui/charts`, `/maps`, `/tables`, `/layout` |
+| Dataset builder, location picker | `packages/ui`, `packages/core`, `packages/api` | `@chap-blocks/ui/datasets` |
 | Data hooks and notifications | `packages/runtime`, `packages/api` | `@chap-blocks/runtime` |
 | Full domain screens | All five packages | `@chap-blocks/modeling/datasets`, `/evaluations`, `/models`, `/predictions`, `/jobs`, `/alerts` |
 
-Run `pnpm install` in the destination workspace. The package manifests specify the remaining third-party dependencies. React and ReactDOM must resolve to one React 18 installation.
+With pnpm, `pnpm install` installs the third-party dependencies the package manifests specify. With npm or yarn 1, `link-blocks.mjs` lists the ones your `package.json` must add. React and ReactDOM must resolve to one React 18 installation.
 
 ## Data with your own UI
 

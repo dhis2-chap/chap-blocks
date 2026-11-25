@@ -6,7 +6,8 @@
 - Preserve source attribution and licenses. Do not copy uncommitted upstream work without an explicit reason.
 - Regenerate API sources with `pnpm api:generate`; do not hand-edit generated files.
 - Run `pnpm check` after a functional change. Test meaningful request/error/state behavior.
-- The repository is private. Do not publish packages or change visibility without user authorization.
+- The repository is public: code, commits, issues and pull requests are visible to anyone. Do not publish packages or change visibility without user authorization.
+- Other repositories consume the packages from a git submodule, with pnpm workspaces or `scripts/link-blocks.mjs` (npm, yarn 1); see the README. Keep every package's third-party imports declared in its own `package.json`, because the link script checks consumers against those lists.
 
 ## Deploying to chap-sandbox
 

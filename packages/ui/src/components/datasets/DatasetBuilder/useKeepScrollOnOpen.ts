@@ -24,7 +24,7 @@ const scrollContainers = (from: Element): Element[] => {
  */
 export const useKeepScrollOnOpen = () => {
     const saved = useRef<Position[]>([]);
-    const release = useRef<() => void>();
+    const release = useRef<(() => void) | undefined>(undefined);
     useEffect(() => () => release.current?.(), []);
 
     const save = (event: { currentTarget: Element }) => {

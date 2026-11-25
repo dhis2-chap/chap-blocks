@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 const usePolling = (callback: () => void, delay: number) => {
-    const savedCallback = useRef<() => void>();
+    const savedCallback = useRef<(() => void) | undefined>(undefined);
     const intervalId = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const startPolling = () => {
