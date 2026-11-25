@@ -189,9 +189,9 @@ export const columnsFor = (names: string[], variables: DatasetVariable[], period
 }));
 
 /**
- * The draft's columns as Chap Core dataset data sources: each covariate and the variable id it comes from.
- * Chap Core reads every id as a data element to pull values from, so pass only the columns it should pull, for
- * example `toDataSources({ ...draft, columns: draft.columns.filter(column => isDhis2(column.variableId)) })`.
+ * The draft's columns as Chap Core dataset data sources: which variable each covariate came from. Chap Core only
+ * stores this record; the values themselves go in the request's `providedData`. The Modeling app reads these ids as
+ * DHIS2 data items, to suggest data and fetch it again for new predictions.
  */
 export const toDataSources = (draft: DatasetDraft): DataSource[] => draft.columns.map(column => ({
     covariate: column.name.trim(),
