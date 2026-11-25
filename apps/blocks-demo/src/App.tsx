@@ -83,7 +83,10 @@ const NAV: NavGroup[] = [
     },
     {
         title: 'Datasets',
-        items: [{ id: 'dataset-builder', label: 'DatasetBuilder' }],
+        items: [
+            { id: 'dataset-builder', label: 'DatasetBuilder' },
+            { id: 'location-picker', label: 'LocationPicker' },
+        ],
     },
     {
         title: 'Data & connection',

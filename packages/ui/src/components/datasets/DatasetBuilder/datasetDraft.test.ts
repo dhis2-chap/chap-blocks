@@ -17,18 +17,18 @@ import {
 const options: DatasetOptions = {
     variables: [
         { id: 'cases', name: 'Malaria cases', column: 'disease_cases', source: 'DHIS2' },
-        { id: 'rain', name: 'Total precipitation', column: 'rainfall', source: 'ERA5', periodTypes: ['MONTH'] },
-        { id: 'rain-weekly', name: 'Weekly precipitation', column: 'rainfall', periodTypes: ['WEEK'] },
+        { id: 'rain', name: 'Total precipitation', column: 'rainfall', source: 'ERA5', periodTypes: ['MONTHLY'] },
+        { id: 'rain-weekly', name: 'Weekly precipitation', column: 'rainfall', periodTypes: ['WEEKLY'] },
     ],
     periodTypes: [
-        { id: 'MONTH', name: 'Monthly', periods: ['202401', '202402', '202403'].map(id => ({ id, name: id })) },
-        { id: 'WEEK', name: 'Weekly', periods: ['2024W1', '2024W2'].map(id => ({ id, name: id })) },
+        { id: 'MONTHLY', name: 'Monthly', minPeriodId: '202401', maxPeriodId: '202412' },
+        { id: 'WEEKLY', name: 'Weekly' },
     ],
 };
 
 const validDraft: DatasetDraft = {
     name: 'Malaria 2024',
-    periodType: 'MONTH',
+    periodType: 'MONTHLY',
     startPeriod: '202401',
     endPeriod: '202403',
     locationIds: ['district-a'],
@@ -56,8 +56,18 @@ describe('validateDatasetDraft', () => {
         expect(errors.startPeriod).toBeUndefined();
     });
 
+    it('rejects periods outside the period type\'s bounds', () => {
+        const errors = validateDatasetDraft({ ...validDraft, startPeriod: '202312', endPeriod: '202501' }, options);
+        expect(errors.startPeriod).toBeDefined();
+        expect(errors.endPeriod).toBeDefined();
+    });
+
+    it('rejects ids that are not periods', () => {
+        expect(validateDatasetDraft({ ...validDraft, startPeriod: 'nonsense' }, options).startPeriod).toBeDefined();
+    });
+
     it('rejects periods that belong to another period type', () => {
-        const errors = validateDatasetDraft({ ...validDraft, periodType: 'WEEK' }, options);
+        const errors = validateDatasetDraft({ ...validDraft, periodType: 'WEEKLY' }, options);
         expect(errors.startPeriod).toBeDefined();
         expect(errors.endPeriod).toBeDefined();
     });
@@ -83,7 +93,7 @@ describe('validateDatasetDraft', () => {
     });
 
     it('flags a variable without values for the chosen period type', () => {
-        const errors = validateDatasetDraft({ ...validDraft, periodType: 'WEEK', startPeriod: '2024W1', endPeriod: '2024W2' }, options);
+        const errors = validateDatasetDraft({ ...validDraft, periodType: 'WEEKLY', startPeriod: '2024W1', endPeriod: '2024W2' }, options);
         expect(errors.columnErrors[1].variableId).toBe('Total precipitation has no weekly data');
         expect(errors.columnErrors[0]).toEqual({});
     });
@@ -105,23 +115,27 @@ describe('resolveTargetColumn', () => {
 
 describe('getDraftPeriods', () => {
     it('lists the periods in the range, inclusive', () => {
-        expect(getDraftPeriods({ ...validDraft, startPeriod: '202402' }, options.periodTypes).map(period => period.id))
+        expect(getDraftPeriods({ ...validDraft, startPeriod: '202402' }).map(period => period.id))
             .toEqual(['202402', '202403']);
+        expect(getDraftPeriods({ startPeriod: '2024W52', endPeriod: '2025W2' }).map(period => period.id))
+            .toEqual(['2024W52', '2025W1', '2025W2']);
     });
 
-    it('is empty for a reversed or incomplete range', () => {
-        expect(getDraftPeriods({ ...validDraft, startPeriod: '202403', endPeriod: '202401' }, options.periodTypes)).toEqual([]);
-        expect(getDraftPeriods({ ...validDraft, endPeriod: '' }, options.periodTypes)).toEqual([]);
+    it('is empty for a reversed, incomplete, invalid or mixed range', () => {
+        expect(getDraftPeriods({ ...validDraft, startPeriod: '202403', endPeriod: '202401' })).toEqual([]);
+        expect(getDraftPeriods({ ...validDraft, endPeriod: '' })).toEqual([]);
+        expect(getDraftPeriods({ startPeriod: 'nonsense', endPeriod: '202401' })).toEqual([]);
+        expect(getDraftPeriods({ startPeriod: '2024W1', endPeriod: '202401' })).toEqual([]);
     });
 });
 
 describe('getModelFit', () => {
     it('sorts models into supported, missing columns (fewest first) and wrong period type', () => {
-        const fit = getModelFit(['disease_cases', 'rainfall'], 'MONTH', [
+        const fit = getModelFit(['disease_cases', 'rainfall'], 'MONTHLY', [
             model('needs-two', ['disease_cases', 'temperature', 'population']),
             model('runs', ['disease_cases', 'rainfall']),
             model('needs-one', ['disease_cases', 'temperature']),
-            model('weekly', ['disease_cases'], ['week']),
+            model('weekly', ['disease_cases'], ['WEEKLY']),
         ]);
         expect(fit.supported.map(m => m.id)).toEqual(['runs']);
         expect(fit.missingColumns.map(({ model: m, missing }) => [m.id, missing])).toEqual([
@@ -132,13 +146,13 @@ describe('getModelFit', () => {
     });
 
     it('does not rule out models on period type before one is chosen', () => {
-        expect(getModelFit([], '', [model('weekly', [], ['WEEK'])]).supported).toHaveLength(1);
+        expect(getModelFit([], '', [model('weekly', [], ['WEEKLY'])]).supported).toHaveLength(1);
     });
 });
 
 describe('columnsFor', () => {
     it('picks a variable that suggests the name and has values for the period type', () => {
-        expect(columnsFor(['rainfall', 'population'], options.variables, 'WEEK')).toEqual([
+        expect(columnsFor(['rainfall', 'population'], options.variables, 'WEEKLY')).toEqual([
             { name: 'rainfall', variableId: 'rain-weekly' },
             { name: 'population', variableId: '' },
         ]);

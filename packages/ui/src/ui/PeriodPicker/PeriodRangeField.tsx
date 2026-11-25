@@ -25,6 +25,7 @@ export type PeriodRangeFieldProps = {
     toDataTest?: string;
     onFromChange: (period: Dhis2FixedPeriod) => void;
     onToChange: (period: Dhis2FixedPeriod) => void;
+    className?: string;
 };
 
 export const PeriodRangeField = ({
@@ -44,8 +45,9 @@ export const PeriodRangeField = ({
     toDataTest,
     onFromChange,
     onToChange,
+    className,
 }: PeriodRangeFieldProps) => (
-    <div className={styles.container}>
+    <div className={className ? `${styles.container} ${className}` : styles.container}>
         <div className={styles.field}>
             <Label>{fromLabel}</Label>
             <PeriodPicker
@@ -73,6 +75,7 @@ export const PeriodRangeField = ({
                 locale={locale}
                 minPeriodId={minPeriodId}
                 maxPeriodId={maxPeriodId}
+                referencePeriodId={fromValue}
                 disabled={disabled}
                 dataTest={toDataTest}
                 ariaLabel={toLabel}

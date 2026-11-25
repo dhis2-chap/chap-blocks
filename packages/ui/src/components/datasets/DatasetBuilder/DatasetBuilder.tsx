@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import i18n from '@dhis2/d2-i18n';
 import {
     Button,
@@ -7,12 +7,11 @@ import {
     IconAdd16,
     IconDelete16,
     InputField,
-    MultiSelectField,
-    MultiSelectOption,
     SingleSelectField,
     SingleSelectOption,
     Tag,
 } from '@dhis2/ui';
+import type { Dhis2Calendar } from '@chap-blocks/core';
 import {
     columnsFor,
     emptyDatasetDraft,
@@ -25,13 +24,13 @@ import {
     validateDatasetDraft,
     type DatasetColumn,
     type DatasetDraft,
-    type DatasetLocation,
     type DatasetModel,
     type DatasetPeriodType,
     type DatasetVariable,
 } from './datasetDraft';
-import { getLeafLocationIds } from './locationHierarchy';
-import { LocationTree } from './LocationTree';
+import { getLeafLocationIds, type LocationOption } from '../../locations/LocationPicker/locationHierarchy';
+import { LocationPicker } from '../../locations/LocationPicker/LocationPicker';
+import { PeriodRangeField } from '../../../ui/PeriodPicker/PeriodRangeField';
 import { useKeepScrollOnOpen } from './useKeepScrollOnOpen';
 import styles from './DatasetBuilder.module.css';
 
@@ -47,10 +46,14 @@ export type DatasetBuilderProps = {
     /** Everything the host can supply values for, from any source. */
     variables: DatasetVariable[];
     /** A flat list shows as a multi-select; with `parentId`s it shows as a tree. Ignored with `renderLocations`. */
-    locations?: DatasetLocation[];
+    locations?: LocationOption[];
     /** Replaces the built-in location picker, for example with a lazily loaded DHIS2 org unit tree. */
     renderLocations?: (props: DatasetLocationPickerProps) => ReactNode;
+    /** DHIS2 period types, e.g. `[{ id: 'MONTHLY', name: 'Monthly' }]`. With one, the period type field is hidden. */
     periodTypes: DatasetPeriodType[];
+    /** The DHIS2 calendar to show periods in, e.g. `ethiopian`. Defaults to `gregory`. */
+    calendar?: Dhis2Calendar;
+    locale?: string;
     /**
      * Called with a valid draft: names trimmed, target resolved. Fetching values and saving the dataset belong to
      * the host, which looks up each column's `variableId` in its own variables to know where the values come from.
@@ -80,6 +83,8 @@ export const DatasetBuilder = ({
     locations = [],
     renderLocations,
     periodTypes,
+    calendar = 'gregory',
+    locale,
     onSubmit,
     models,
     initialDraft,
@@ -95,11 +100,9 @@ export const DatasetBuilder = ({
         // Leave out `undefined`s, which would replace the defaults.
         ...Object.fromEntries(Object.entries(initialDraft ?? {}).filter(([, value]) => value !== undefined)),
     }));
-    const isTree = locations.some(location => location.parentId);
-    const selectableIds = renderLocations ? [] : getLeafLocationIds(locations);
     // Period types and locations can arrive or change after mount, so the draft follows them without losing
     // the stored choices: an unknown period type falls back to the first, unknown locations are left out.
-    const selectable = new Set(selectableIds);
+    const selectable = useMemo(() => new Set(getLeafLocationIds(locations)), [locations]);
     const draft: DatasetDraft = {
         ...stored,
         periodType: periodTypes.some(type => type.id === stored.periodType) ? stored.periodType : periodTypes[0]?.id ?? '',
@@ -108,13 +111,15 @@ export const DatasetBuilder = ({
     // Errors show once the user tries to submit, then follow every edit.
     const [showErrors, setShowErrors] = useState(false);
     const keepScroll = useKeepScrollOnOpen();
-    const errors = validateDatasetDraft(draft, { variables, periodTypes });
+    const errors = validateDatasetDraft(draft, { variables, periodTypes, calendar });
     const shown = showErrors ? errors : { columnErrors: [] };
     const isLocked = disabled || submitting;
 
     const periodType = periodTypes.find(type => type.id === draft.periodType);
-    const periods = periodType?.periods ?? [];
-    const periodCount = getDraftPeriods(draft, periodTypes).length;
+    const periodCount = useMemo(
+        () => getDraftPeriods({ startPeriod: draft.startPeriod, endPeriod: draft.endPeriod }, calendar).length,
+        [draft.startPeriod, draft.endPeriod, calendar],
+    );
     const columnNames = [...new Set(draft.columns.map(column => column.name.trim()).filter(Boolean))];
     const targetColumn = resolveTargetColumn(draft);
     const fit = models && getModelFit(columnNames, draft.periodType, models);
@@ -135,14 +140,8 @@ export const DatasetBuilder = ({
         const name = draft.columns[index].name.trim() || (variable ? suggestColumnName(variable) : '');
         updateColumn(index, { variableId, name });
     };
-    const choosePeriodType = (id: string) => {
-        const ids = periodTypes.find(type => type.id === id)?.periods.map(period => period.id) ?? [];
-        update({
-            periodType: id,
-            startPeriod: ids.includes(draft.startPeriod) ? draft.startPeriod : '',
-            endPeriod: ids.includes(draft.endPeriod) ? draft.endPeriod : '',
-        });
-    };
+    // Period ids belong to one period type, so a new type starts a new range.
+    const choosePeriodType = (id: string) => update({ periodType: id, startPeriod: '', endPeriod: '' });
     const submit = () => {
         setShowErrors(true);
         if (hasErrors(errors)) return;
@@ -176,7 +175,7 @@ export const DatasetBuilder = ({
                         dataTest="dataset-builder-name"
                     />
 
-                    <div className={styles.row}>
+                    <div>
                         {periodTypes.length > 1 && (
                             <SingleSelectField
                                 label={i18n.t('Period type')}
@@ -190,79 +189,58 @@ export const DatasetBuilder = ({
                                 {periodTypes.map(type => <SingleSelectOption key={type.id} value={type.id} label={type.name} />)}
                             </SingleSelectField>
                         )}
-                        {(['startPeriod', 'endPeriod'] as const).map(field => (
-                            <SingleSelectField
-                                key={field}
-                                label={field === 'startPeriod' ? i18n.t('From') : i18n.t('To')}
-                                selected={periods.some(period => period.id === draft[field]) ? draft[field] : undefined}
-                                onChange={({ selected }) => update({ [field]: selected })}
-                                error={!!shown[field]}
-                                validationText={shown[field]}
-                                disabled={isLocked || !periods.length}
-                                filterable
-                                noMatchText={i18n.t('No periods match')}
-                                dataTest={`dataset-builder-${field}`}
-                            >
-                                {periods.map(period => <SingleSelectOption key={period.id} value={period.id} label={period.name} />)}
-                            </SingleSelectField>
-                        ))}
+                        {periodType && (
+                            <PeriodRangeField
+                                // Remount on a new period type, so the pickers open on a year that has its periods.
+                                key={periodType.id}
+                                className={periodTypes.length > 1 ? undefined : styles.periodsOnly}
+                                periodType={periodType.id}
+                                calendar={calendar}
+                                locale={locale}
+                                fromValue={draft.startPeriod || null}
+                                toValue={draft.endPeriod || null}
+                                minPeriodId={periodType.minPeriodId}
+                                maxPeriodId={periodType.maxPeriodId}
+                                disabled={isLocked}
+                                fromLabel={i18n.t('From')}
+                                toLabel={i18n.t('To')}
+                                fromError={shown.startPeriod}
+                                toError={shown.endPeriod}
+                                fromDataTest="dataset-builder-startPeriod"
+                                toDataTest="dataset-builder-endPeriod"
+                                onFromChange={period => update({ startPeriod: period.id })}
+                                onToChange={period => update({ endPeriod: period.id })}
+                            />
+                        )}
                     </div>
 
-                    <div>
-                        {renderLocations || isTree ? (
-                            <Field
-                                label={i18n.t('Locations')}
-                                error={!!shown.locationIds}
-                                validationText={shown.locationIds}
-                                disabled={isLocked}
-                                dataTest="dataset-builder-locations"
-                            >
-                                <div role="group" aria-label={i18n.t('Locations')}>
-                                    {renderLocations
-                                        ? renderLocations({
-                                            selected: draft.locationIds,
-                                            onChange: selected => update({ locationIds: selected }),
-                                            disabled: !!isLocked,
-                                            error: !!shown.locationIds,
-                                        })
-                                        : (
-                                            <LocationTree
-                                                locations={locations}
-                                                selected={draft.locationIds}
-                                                onChange={selected => update({ locationIds: selected })}
-                                                disabled={isLocked}
-                                            />
-                                        )}
-                                </div>
-                            </Field>
-                        ) : (
-                            <MultiSelectField
-                                label={i18n.t('Locations')}
-                                selected={draft.locationIds}
-                                onChange={({ selected }) => update({ locationIds: selected })}
-                                error={!!shown.locationIds}
-                                validationText={shown.locationIds}
-                                disabled={isLocked}
-                                filterable
-                                clearable
-                                noMatchText={i18n.t('No locations match')}
-                                dataTest="dataset-builder-locations"
-                            >
-                                {locations.map(location => <MultiSelectOption key={location.id} value={location.id} label={location.name} />)}
-                            </MultiSelectField>
-                        )}
-                        {selectableIds.length > 1 && selectableIds.some(id => !draft.locationIds.includes(id)) && (
-                            <Button
-                                small
-                                secondary
-                                className={styles.selectAll}
-                                disabled={isLocked}
-                                onClick={() => update({ locationIds: selectableIds })}
-                            >
-                                {i18n.t('Select all {{count}} locations', { count: selectableIds.length })}
-                            </Button>
-                        )}
-                    </div>
+                    {renderLocations ? (
+                        <Field
+                            label={i18n.t('Locations')}
+                            error={!!shown.locationIds}
+                            validationText={shown.locationIds}
+                            disabled={isLocked}
+                            dataTest="dataset-builder-locations"
+                        >
+                            <div role="group" aria-label={i18n.t('Locations')}>
+                                {renderLocations({
+                                    selected: draft.locationIds,
+                                    onChange: selected => update({ locationIds: selected }),
+                                    disabled: !!isLocked,
+                                    error: !!shown.locationIds,
+                                })}
+                            </div>
+                        </Field>
+                    ) : (
+                        <LocationPicker
+                            locations={locations}
+                            selected={draft.locationIds}
+                            onChange={selected => update({ locationIds: selected })}
+                            disabled={isLocked}
+                            error={shown.locationIds}
+                            dataTest="dataset-builder-locations"
+                        />
+                    )}
 
                     <section className={styles.columns} aria-labelledby="dataset-builder-columns">
                         <h4 id="dataset-builder-columns" className={styles.heading}>{i18n.t('Columns')}</h4>

@@ -93,6 +93,9 @@ export const getModelSupport = (
     return support;
 };
 
+// Chap names the period type a model accepts; the block uses DHIS2 period types.
+const DHIS2_PERIOD_TYPES: Record<string, string> = { week: 'WEEKLY', month: 'MONTHLY', year: 'YEARLY' };
+
 /** Chap models as the `DatasetBuilder` block sees them: the columns each reads and the period type it accepts. */
 export const toDatasetModels = (models: ModelSpecRead[]): DatasetModel[] => models
     .filter(model => !model.archived)
@@ -102,6 +105,6 @@ export const toDatasetModels = (models: ModelSpecRead[]): DatasetModel[] => mode
             id: String(model.id),
             name: model.displayName || model.name,
             columns: getRequiredCovariates(model),
-            periodTypes: !periodType || periodType === 'any' ? undefined : [periodType],
+            periodTypes: !periodType || periodType === 'any' ? undefined : [DHIS2_PERIOD_TYPES[periodType] ?? periodType],
         };
     });

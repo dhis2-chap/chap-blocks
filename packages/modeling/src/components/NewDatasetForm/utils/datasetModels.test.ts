@@ -6,7 +6,7 @@ describe('toDatasetModels', () => {
     it('lists the columns a model reads and its period type, leaving out archived models', () => {
         const any = { ...model, id: 2, supportedPeriodType: 'any' as ModelSpecRead['supportedPeriodType'] };
         expect(toDatasetModels([model, any, { ...model, id: 3, archived: true }])).toEqual([
-            { id: '1', name: 'configured', columns: ['rainfall', 'humidity', 'disease_cases'], periodTypes: ['month'] },
+            { id: '1', name: 'configured', columns: ['rainfall', 'humidity', 'disease_cases'], periodTypes: ['MONTHLY'] },
             { id: '2', name: 'configured', columns: ['rainfall', 'humidity', 'disease_cases'], periodTypes: undefined },
         ]);
     });

@@ -10,11 +10,11 @@ export {
     type DatasetColumn,
     type DatasetDraft,
     type DatasetDraftErrors,
-    type DatasetLocation,
     type DatasetModel,
     type DatasetModelFit,
     type DatasetOptions,
-    type DatasetPeriod,
     type DatasetPeriodType,
     type DatasetVariable,
 } from './components/datasets/DatasetBuilder/datasetDraft';
+export { LocationPicker, type LocationPickerProps } from './components/locations/LocationPicker/LocationPicker';
+export { type LocationOption } from './components/locations/LocationPicker/locationHierarchy';

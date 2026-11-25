@@ -1,0 +1,46 @@
+.selectAll {
+    margin-top: 8px;
+}
+
+.tree {
+    max-height: 320px;
+    overflow: auto;
+    padding: 4px 8px;
+    border: 1px solid var(--colors-grey500, #a0adba);
+    border-radius: 3px;
+    background: var(--colors-white, #fff);
+}
+
+.treeLevel {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.treeLevel .treeLevel {
+    padding-left: 20px;
+}
+
+.treeNode {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.treeToggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--colors-grey700, #4a5768);
+    cursor: pointer;
+}
+
+span.treeToggle {
+    cursor: default;
+}

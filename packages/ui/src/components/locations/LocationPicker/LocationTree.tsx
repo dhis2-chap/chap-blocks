@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react';
 import i18n from '@dhis2/d2-i18n';
 import { Checkbox, IconChevronDown16, IconChevronRight16 } from '@dhis2/ui';
-import type { DatasetLocation } from './datasetDraft';
-import { groupLocationsByParent, leafIdsUnder } from './locationHierarchy';
-import styles from './DatasetBuilder.module.css';
+import { groupLocationsByParent, leafIdsUnder, type LocationOption } from './locationHierarchy';
+import styles from './LocationPicker.module.css';
 
 type LocationTreeProps = {
-    locations: DatasetLocation[];
+    locations: LocationOption[];
     selected: string[];
     onChange: (selected: string[]) => void;
     disabled?: boolean;

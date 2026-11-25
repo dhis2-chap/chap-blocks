@@ -1,5 +1,13 @@
 import i18n from '@dhis2/d2-i18n';
 import type { DataSource } from '@chap-blocks/api';
+import {
+    compareFixedPeriods,
+    createFixedPeriodFromPeriodId,
+    getPeriodsInRange,
+    type Dhis2Calendar,
+    type Dhis2FixedPeriod,
+    type Dhis2FixedPeriodType,
+} from '@chap-blocks/core';
 
 /**
  * Something the host can supply values for: a DHIS2 data element, a climate dataset, an uploaded column.
@@ -12,30 +20,25 @@ export type DatasetVariable = {
     column?: string;
     /** Where it comes from, shown next to the name, e.g. `DHIS2` or `ERA5`. */
     source?: string;
-    /** Period type ids the variable has values for. Leave out when it has values for every period type. */
+    /** Period types the variable has values for, e.g. `['MONTHLY']`. Leave out when it has values for every one. */
     periodTypes?: string[];
 };
 
-/**
- * A place a dataset can cover. With `parentId`, locations form a hierarchy, such as DHIS2 org units:
- * only locations without children go into a dataset, and the others group them.
- */
-export type DatasetLocation = { id: string; name: string; parentId?: string };
-
-export type DatasetPeriod = { id: string; name: string };
-
-/**
- * A period type the host can supply, with its periods in chronological order. For the model panel, use Chap period
- * type names as ids (`month`, `week`, in any case), since models name the period type they accept that way.
- */
-export type DatasetPeriodType = { id: string; name: string; periods: DatasetPeriod[] };
+/** A period type the host can supply values for. Chap Core reads DHIS2 period ids, such as `202401` or `2024W1`. */
+export type DatasetPeriodType = {
+    id: Dhis2FixedPeriodType;
+    name: string;
+    /** The earliest and latest periods that can be chosen, for example where the host has data. */
+    minPeriodId?: string;
+    maxPeriodId?: string;
+};
 
 /** What a model needs from a dataset, so the builder can show which models will run on it. */
 export type DatasetModel = {
     id: string;
     name: string;
     columns: string[];
-    /** Period type ids the model accepts. Leave out when it accepts any. */
+    /** Period types the model accepts, e.g. `['MONTHLY']`. Leave out when it accepts any. */
     periodTypes?: string[];
 };
 
@@ -66,6 +69,8 @@ export type DatasetDraftErrors = {
 export type DatasetOptions = {
     variables: DatasetVariable[];
     periodTypes: DatasetPeriodType[];
+    /** The DHIS2 calendar periods are in. Defaults to `gregory`. */
+    calendar?: Dhis2Calendar;
 };
 
 export const emptyDatasetDraft = (periodType = ''): DatasetDraft => ({
@@ -78,11 +83,25 @@ export const emptyDatasetDraft = (periodType = ''): DatasetDraft => ({
     targetColumn: '',
 });
 
-const sameId = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
-
 export const isAvailableFor = (variable: DatasetVariable, periodType: string) => (
-    !variable.periodTypes || variable.periodTypes.some(id => sameId(id, periodType))
+    !variable.periodTypes || variable.periodTypes.includes(periodType)
 );
+
+/** The period, when the id is one of the period type's and within its bounds. */
+const toPeriod = (id: string, type: DatasetPeriodType, calendar: Dhis2Calendar): Dhis2FixedPeriod | undefined => {
+    let period: Dhis2FixedPeriod;
+    try {
+        period = createFixedPeriodFromPeriodId({ periodId: id, calendar });
+    }
+    catch {
+        return undefined;
+    }
+    if (period.periodType !== type.id) return undefined;
+    const outside = (bound: string | undefined, sign: number) => (
+        !!bound && sign * compareFixedPeriods(period, createFixedPeriodFromPeriodId({ periodId: bound, calendar })) > 0
+    );
+    return outside(type.minPeriodId, -1) || outside(type.maxPeriodId, 1) ? undefined : period;
+};
 
 /** A column name a model can read: lower case words joined by underscores. */
 export const toColumnName = (name: string) => name
@@ -100,24 +119,31 @@ export const resolveTargetColumn = (draft: DatasetDraft): string => {
     return names.includes('disease_cases') ? 'disease_cases' : '';
 };
 
-/** The periods from start to end, inclusive; empty when either is unknown or they are reversed. */
-export const getDraftPeriods = (draft: DatasetDraft, periodTypes: DatasetPeriodType[]): DatasetPeriod[] => {
-    const periods = periodTypes.find(type => type.id === draft.periodType)?.periods ?? [];
-    const start = periods.findIndex(period => period.id === draft.startPeriod);
-    const end = periods.findIndex(period => period.id === draft.endPeriod);
-    return start < 0 || end < start ? [] : periods.slice(start, end + 1);
+/** The periods from start to end, inclusive; empty when either is missing or invalid, or they are reversed. */
+export const getDraftPeriods = (draft: Pick<DatasetDraft, 'startPeriod' | 'endPeriod'>, calendar: Dhis2Calendar = 'gregory'): Dhis2FixedPeriod[] => {
+    if (!draft.startPeriod || !draft.endPeriod) return [];
+    try {
+        return getPeriodsInRange({ startPeriodId: draft.startPeriod, endPeriodId: draft.endPeriod, calendar });
+    }
+    catch {
+        return [];
+    }
 };
 
-export const validateDatasetDraft = (draft: DatasetDraft, { variables, periodTypes }: DatasetOptions): DatasetDraftErrors => {
+export const validateDatasetDraft = (
+    draft: DatasetDraft,
+    { variables, periodTypes, calendar = 'gregory' }: DatasetOptions,
+): DatasetDraftErrors => {
     const errors: DatasetDraftErrors = { columnErrors: [] };
     const periodType = periodTypes.find(type => type.id === draft.periodType);
-    const periodIds = periodType?.periods.map(period => period.id) ?? [];
+    const start = periodType && toPeriod(draft.startPeriod, periodType, calendar);
+    const end = periodType && toPeriod(draft.endPeriod, periodType, calendar);
 
     if (!draft.name.trim()) errors.name = i18n.t('Name the dataset');
     if (!periodType) errors.periodType = i18n.t('Choose a period type');
-    if (!periodIds.includes(draft.startPeriod)) errors.startPeriod = i18n.t('Choose a start period');
-    if (!periodIds.includes(draft.endPeriod)) errors.endPeriod = i18n.t('Choose an end period');
-    else if (!errors.startPeriod && periodIds.indexOf(draft.endPeriod) < periodIds.indexOf(draft.startPeriod)) {
+    if (!start) errors.startPeriod = i18n.t('Choose a start period');
+    if (!end) errors.endPeriod = i18n.t('Choose an end period');
+    else if (start && compareFixedPeriods(end, start) < 0) {
         errors.endPeriod = i18n.t('The end period must not be before the start period');
     }
     if (!draft.locationIds.length) errors.locationIds = i18n.t('Choose at least one location');
@@ -167,7 +193,7 @@ export type DatasetModelFit = {
 export const getModelFit = (columnNames: string[], periodType: string, models: DatasetModel[]): DatasetModelFit => {
     const fit: DatasetModelFit = { supported: [], missingColumns: [], wrongPeriodType: [] };
     for (const model of models) {
-        if (periodType && model.periodTypes && !model.periodTypes.some(id => sameId(id, periodType))) {
+        if (periodType && model.periodTypes && !model.periodTypes.includes(periodType)) {
             fit.wrongPeriodType.push(model);
             continue;
         }
