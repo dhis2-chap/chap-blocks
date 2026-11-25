@@ -3,6 +3,7 @@ import i18n from '@dhis2/d2-i18n';
 import type { SelectionBias } from '@chap-blocks/api';
 import { BenchmarkTable, type BenchmarkTableProps } from '../BenchmarkTable/BenchmarkTable';
 import { SelectionBiasChart } from '../SelectionBiasChart/SelectionBiasChart';
+import { selectionBiasHorizons } from '../SelectionBiasChart/selectionBiasHorizons';
 import { formatComparison } from '../../../utils/metricFormat';
 import { selectionBiasSummary } from './selectionBiasSummary';
 import styles from './BenchmarkSelectionBias.module.css';
@@ -69,7 +70,8 @@ export const BenchmarkSelectionBias = ({
                             baseline: selectionBias.baselineModel,
                             other: selectionBias.nWindowsOtherPick,
                             windows: selectionBias.nWindows,
-                        })}
+                        })}{' '}
+                        {selectionBiasHorizons(selectionBias)}
                     </p>
                     {axes.length > 0 && (
                         <div className={styles.charts}>

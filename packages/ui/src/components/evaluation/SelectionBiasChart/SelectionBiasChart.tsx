@@ -36,7 +36,7 @@ export const SelectionBiasChart = ({ selectionBias, axis, formatValue = defaultF
         exporting: { enabled: false },
         credits: { enabled: false },
         xAxis: {
-            title: { text: escapeHtml(windowSize ? i18n.t('Validation window size k (splits)') : i18n.t('Distance d after the validation window (splits)')) },
+            title: { text: escapeHtml(windowSize ? i18n.t('Validation window size k (splits)') : (selectionBias.gapSplits > 0 ? i18n.t('Distance d after the window and a {{gap}}-split gap (splits)', { gap: selectionBias.gapSplits }) : i18n.t('Distance d after the validation window (splits)'))) },
             allowDecimals: false,
         },
         yAxis: {

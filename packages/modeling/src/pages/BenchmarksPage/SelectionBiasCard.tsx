@@ -1,7 +1,7 @@
 import i18n from '@dhis2/d2-i18n';
 import { CircularLoader, NoticeBox } from '@dhis2/ui';
 import type { BacktestSpecificationRead } from '@chap-blocks/api';
-import { SelectionBiasChart } from '@chap-blocks/ui/charts';
+import { SelectionBiasChart, selectionBiasHorizons } from '@chap-blocks/ui/charts';
 import { SelectionBiasSummary } from '@chap-blocks/ui/tables';
 import { formatComparison } from '@chap-blocks/ui/metrics';
 import { ChapErrorNotice } from '../../components/ChapErrorNotice';
@@ -46,7 +46,8 @@ export const SelectionBiasCard = ({ specification }: Props) => {
                     other: bias.nWindowsOtherPick,
                     windows: bias.nWindows,
                     pairs: bias.nPairs,
-                })}
+                })}{' '}
+                {selectionBiasHorizons(bias)}
             </p>
             <div className={styles.selectionBiasCharts}>
                 <SelectionBiasChart selectionBias={bias} axis="windowSize" formatValue={format} />

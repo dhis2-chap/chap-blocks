@@ -22,9 +22,13 @@ export type SelectionBias = {
      */
     comparisonDescription: string;
     /**
-     * Horizon distance whose forecasts were scored.
+     * Horizon distances whose forecasts were scored.
      */
-    horizonDistance: number;
+    horizonDistances: Array<number>;
+    /**
+     * Splits left out between each validation window and its first test split, so the two share no target period: the largest minus the smallest horizon distance scored.
+     */
+    gapSplits: number;
     /**
      * Split points used, in order: the periods each split predicted from.
      */

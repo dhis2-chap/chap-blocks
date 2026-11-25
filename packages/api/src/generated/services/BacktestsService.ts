@@ -573,6 +573,8 @@ export class BacktestsService {
     }
     /**
      * Estimate how much picking the best model on a specification flatters it
+     * **Needs `read:backtests`.**
+     *
      * Estimate the selection bias of the model with the best comparison with the baseline over all split points.
      *
      * Runs a nested scheme on the specification's own split points: every window of consecutive
@@ -585,13 +587,16 @@ export class BacktestsService {
      * against the distance ``d`` to the test split is a check and should be flat.
      *
      * Candidates are the newest backtest of each model on the leaderboard, scored on the
-     * forecasts all of them and the baseline made. 404 if the specification is unknown, 422 if
+     * forecasts all of them and the baseline made, at every horizon distance unless
+     * ``horizonDistance`` picks one. With several horizon distances, the test splits start
+     * ``gapSplits`` (largest minus smallest horizon distance) splits after each window, so
+     * window and test splits share no target period. 404 if the specification is unknown, 422 if
      * the metric or baseline is unknown or unsuitable, the baseline has not run, or there are
-     * fewer than two models or three split points.
+     * fewer than two models or 3 + gapSplits split points.
      * @param specificationId
      * @param metric Id of a mean-aggregated metric with a comparison operator, e.g. 'crps_log1p'.
      * @param baseline Name of the baseline model to compare with. Defaults to the installation's default.
-     * @param horizonDistance Horizon distance whose forecasts are scored.
+     * @param horizonDistance Score only this horizon distance. By default every horizon distance is scored, as on the leaderboard.
      * @returns SelectionBias Successful Response
      * @throws ApiError
      */
@@ -599,7 +604,7 @@ export class BacktestsService {
         specificationId: number,
         metric: string = 'crps_log1p',
         baseline?: (string | null),
-        horizonDistance: number = 1,
+        horizonDistance?: (number | null),
     ): CancelablePromise<SelectionBias> {
         return this.httpRequest.request({
             method: 'GET',

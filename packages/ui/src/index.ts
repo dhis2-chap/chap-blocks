@@ -40,6 +40,7 @@ export { RankGrid, type RankGridItem, type RankGridProps } from './components/ev
 export { rankColumns, type RankScores, type RankTable } from './components/evaluation/RankGrid/ranks';
 export { SelectionBiasChart, type SelectionBiasChartProps } from './components/evaluation/SelectionBiasChart/SelectionBiasChart';
 export { selectionBiasSeries, type SelectionBiasAxis, type SelectionBiasSeries } from './components/evaluation/SelectionBiasChart/selectionBiasSeries';
+export { selectionBiasHorizons } from './components/evaluation/SelectionBiasChart/selectionBiasHorizons';
 export {
     OverflowButton,
     Ping,
