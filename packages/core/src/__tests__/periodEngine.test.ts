@@ -26,6 +26,13 @@ describe('periodEngine', () => {
         expect(normalizeDhis2CalendarSetting('thai')).toBe('buddhist');
     });
 
+    // @js-temporal/polyfill before 0.5 throws a RangeError here on current ICU ("Era aa ... was not matched").
+    it('creates Ethiopian periods', () => {
+        expect(createFixedPeriodFromPeriodId({ periodId: '201601', calendar: 'ethiopian' }).name).toBe('Meskerem 2016');
+        expect(getPeriodsInRange({ startPeriodId: '201612', endPeriodId: '201701', calendar: 'ethiopic' }).map(period => period.id))
+            .toEqual(['201612', '201701']);
+    });
+
     it('throws for unsupported DHIS2 calendar settings', () => {
         expect(() => normalizeDhis2CalendarSetting('julian')).toThrow(
             'Unsupported DHIS2 calendar "julian"',

@@ -23,7 +23,7 @@
   "name": "@chap-blocks/modeling",
   "dependencies": {
     "@dhis2/d2-i18n": "1.2.0",
-    "@dhis2/multi-calendar-dates": "^2.1.2",
+    "@dhis2/multi-calendar-dates": "^3.2.1",
     "@dhis2/ui": "^10.13.0",
     "@hookform/resolvers": "^5.0.1",
     "@mdx-js/react": "^3.1.1",
