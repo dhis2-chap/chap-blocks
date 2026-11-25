@@ -24,7 +24,10 @@ export type DatasetLocation = { id: string; name: string; parentId?: string };
 
 export type DatasetPeriod = { id: string; name: string };
 
-/** A period type the host can supply, with its periods in chronological order. */
+/**
+ * A period type the host can supply, with its periods in chronological order. For the model panel, use Chap period
+ * type names as ids (`month`, `week`, in any case), since models name the period type they accept that way.
+ */
 export type DatasetPeriodType = { id: string; name: string; periods: DatasetPeriod[] };
 
 /** What a model needs from a dataset, so the builder can show which models will run on it. */
@@ -127,6 +130,13 @@ export const validateDatasetDraft = (draft: DatasetDraft, { variables, periodTyp
         const variable = variables.find(candidate => candidate.id === column.variableId);
         if (!name) columnErrors.name = i18n.t('Name the column');
         else if (names.indexOf(name) !== index) columnErrors.name = i18n.t('Another column has this name');
+        // Chap matches columns to model covariates by exact name, and those are lower case words joined by underscores.
+        else if (toColumnName(name) !== name) {
+            columnErrors.name = i18n.t('Use lower case letters, numbers and underscores, such as {{example}}', {
+                example: toColumnName(name) || 'rainfall',
+                interpolation: { escapeValue: false },
+            });
+        }
         if (!variable) columnErrors.variableId = i18n.t('Choose the data for this column');
         else if (periodType && !isAvailableFor(variable, periodType.id)) {
             columnErrors.variableId = i18n.t('{{variable}} has no {{periodType}} data', {
@@ -178,7 +188,11 @@ export const columnsFor = (names: string[], variables: DatasetVariable[], period
     variableId: variables.find(variable => suggestColumnName(variable) === name && isAvailableFor(variable, periodType))?.id ?? '',
 }));
 
-/** The draft's columns as Chap Core dataset data sources: each covariate and the variable id it comes from. */
+/**
+ * The draft's columns as Chap Core dataset data sources: each covariate and the variable id it comes from.
+ * Chap Core reads every id as a data element to pull values from, so pass only the columns it should pull, for
+ * example `toDataSources({ ...draft, columns: draft.columns.filter(column => isDhis2(column.variableId)) })`.
+ */
 export const toDataSources = (draft: DatasetDraft): DataSource[] => draft.columns.map(column => ({
     covariate: column.name.trim(),
     dataElementId: column.variableId,

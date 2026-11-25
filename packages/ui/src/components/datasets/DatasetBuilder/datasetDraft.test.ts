@@ -77,6 +77,11 @@ describe('validateDatasetDraft', () => {
         expect(errors.columnErrors[2].variableId).toBeDefined();
     });
 
+    it('asks for column names models can read', () => {
+        const errors = validateDatasetDraft({ ...validDraft, columns: [{ name: 'Mean temp', variableId: 'cases' }] }, options);
+        expect(errors.columnErrors[0].name).toBe('Use lower case letters, numbers and underscores, such as mean_temp');
+    });
+
     it('flags a variable without values for the chosen period type', () => {
         const errors = validateDatasetDraft({ ...validDraft, periodType: 'WEEK', startPeriod: '2024W1', endPeriod: '2024W2' }, options);
         expect(errors.columnErrors[1].variableId).toBe('Total precipitation has no weekly data');

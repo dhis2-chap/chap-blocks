@@ -1,13 +1,9 @@
 export { DatasetBuilder, type DatasetBuilderProps, type DatasetLocationPickerProps } from './components/datasets/DatasetBuilder/DatasetBuilder';
 export {
-    columnsFor,
     emptyDatasetDraft,
     getDraftPeriods,
     getModelFit,
     hasErrors,
-    isAvailableFor,
-    resolveTargetColumn,
-    suggestColumnName,
     toColumnName,
     toDataSources,
     validateDatasetDraft,

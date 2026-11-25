@@ -51,12 +51,16 @@ export type DatasetBuilderProps = {
     /** Replaces the built-in location picker, for example with a lazily loaded DHIS2 org unit tree. */
     renderLocations?: (props: DatasetLocationPickerProps) => ReactNode;
     periodTypes: DatasetPeriodType[];
-    /** Called with a valid draft, its target resolved. Fetching values and saving the dataset belong to the host. */
+    /**
+     * Called with a valid draft: names trimmed, target resolved. Fetching values and saving the dataset belong to
+     * the host, which looks up each column's `variableId` in its own variables to know where the values come from.
+     */
     onSubmit: (draft: DatasetDraft) => void;
     /** With models, a side panel shows which ones can run on the dataset and adds the columns they miss. */
     models?: DatasetModel[];
     /** The draft to start from. Change the component's `key` to start again. */
     initialDraft?: Partial<DatasetDraft>;
+    /** Every edit, as typed and not yet validated, for example to keep a draft. */
     onChange?: (draft: DatasetDraft) => void;
     onCancel?: () => void;
     submitLabel?: string;
@@ -86,10 +90,21 @@ export const DatasetBuilder = ({
     disabled,
     children,
 }: DatasetBuilderProps) => {
-    const [draft, setDraft] = useState<DatasetDraft>(() => ({
-        ...emptyDatasetDraft(periodTypes[0]?.id),
-        ...initialDraft,
+    const [stored, setStored] = useState<DatasetDraft>(() => ({
+        ...emptyDatasetDraft(),
+        // Leave out `undefined`s, which would replace the defaults.
+        ...Object.fromEntries(Object.entries(initialDraft ?? {}).filter(([, value]) => value !== undefined)),
     }));
+    const isTree = locations.some(location => location.parentId);
+    const selectableIds = renderLocations ? [] : getLeafLocationIds(locations);
+    // Period types and locations can arrive or change after mount, so the draft follows them without losing
+    // the stored choices: an unknown period type falls back to the first, unknown locations are left out.
+    const selectable = new Set(selectableIds);
+    const draft: DatasetDraft = {
+        ...stored,
+        periodType: periodTypes.some(type => type.id === stored.periodType) ? stored.periodType : periodTypes[0]?.id ?? '',
+        locationIds: renderLocations ? stored.locationIds : stored.locationIds.filter(id => selectable.has(id)),
+    };
     // Errors show once the user tries to submit, then follow every edit.
     const [showErrors, setShowErrors] = useState(false);
     const keepScroll = useKeepScrollOnOpen();
@@ -103,13 +118,10 @@ export const DatasetBuilder = ({
     const columnNames = [...new Set(draft.columns.map(column => column.name.trim()).filter(Boolean))];
     const targetColumn = resolveTargetColumn(draft);
     const fit = models && getModelFit(columnNames, draft.periodType, models);
-    const isTree = locations.some(location => location.parentId);
-    const selectableIds = renderLocations ? [] : getLeafLocationIds(locations);
 
     const update = (changes: Partial<DatasetDraft>) => {
-        const next = { ...draft, ...changes };
-        setDraft(next);
-        onChange?.(next);
+        setStored(current => ({ ...current, ...changes }));
+        onChange?.({ ...draft, ...changes });
     };
     const updateColumn = (index: number, changes: Partial<DatasetColumn>) => update({
         columns: draft.columns.map((column, i) => (i === index ? { ...column, ...changes } : column)),
@@ -133,7 +145,13 @@ export const DatasetBuilder = ({
     };
     const submit = () => {
         setShowErrors(true);
-        if (!hasErrors(errors)) onSubmit({ ...draft, name: draft.name.trim(), targetColumn });
+        if (hasErrors(errors)) return;
+        onSubmit({
+            ...draft,
+            name: draft.name.trim(),
+            columns: draft.columns.map(column => ({ ...column, name: column.name.trim() })),
+            targetColumn,
+        });
     };
 
     return (
@@ -199,21 +217,23 @@ export const DatasetBuilder = ({
                                 disabled={isLocked}
                                 dataTest="dataset-builder-locations"
                             >
-                                {renderLocations
-                                    ? renderLocations({
-                                        selected: draft.locationIds,
-                                        onChange: selected => update({ locationIds: selected }),
-                                        disabled: !!isLocked,
-                                        error: !!shown.locationIds,
-                                    })
-                                    : (
-                                        <LocationTree
-                                            locations={locations}
-                                            selected={draft.locationIds}
-                                            onChange={selected => update({ locationIds: selected })}
-                                            disabled={isLocked}
-                                        />
-                                    )}
+                                <div role="group" aria-label={i18n.t('Locations')}>
+                                    {renderLocations
+                                        ? renderLocations({
+                                            selected: draft.locationIds,
+                                            onChange: selected => update({ locationIds: selected }),
+                                            disabled: !!isLocked,
+                                            error: !!shown.locationIds,
+                                        })
+                                        : (
+                                            <LocationTree
+                                                locations={locations}
+                                                selected={draft.locationIds}
+                                                onChange={selected => update({ locationIds: selected })}
+                                                disabled={isLocked}
+                                            />
+                                        )}
+                                </div>
                             </Field>
                         ) : (
                             <MultiSelectField
