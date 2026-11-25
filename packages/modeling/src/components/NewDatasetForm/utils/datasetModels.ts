@@ -1,4 +1,5 @@
 import type { ModelSpecRead } from '@chap-blocks/api';
+import type { DatasetModel } from '@chap-blocks/ui/datasets';
 
 /** Every column name a model reads: its covariates, extra continuous covariates and target. */
 export const getRequiredCovariates = (model: ModelSpecRead): string[] => [...new Set([
@@ -91,3 +92,16 @@ export const getModelSupport = (
 
     return support;
 };
+
+/** Chap models as the `DatasetBuilder` block sees them: the columns each reads and the period type it accepts. */
+export const toDatasetModels = (models: ModelSpecRead[]): DatasetModel[] => models
+    .filter(model => !model.archived)
+    .map((model) => {
+        const periodType = model.supportedPeriodType?.toLowerCase();
+        return {
+            id: String(model.id),
+            name: model.displayName || model.name,
+            columns: getRequiredCovariates(model),
+            periodTypes: !periodType || periodType === 'any' ? undefined : [periodType],
+        };
+    });

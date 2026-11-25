@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { ModelSpecRead } from '@chap-blocks/api';
-import { datasetSupportsModel, getBacktestColumns, getModelSupport } from './datasetModels';
+import { datasetSupportsModel, getBacktestColumns, getModelSupport, toDatasetModels } from './datasetModels';
+
+describe('toDatasetModels', () => {
+    it('lists the columns a model reads and its period type, leaving out archived models', () => {
+        const any = { ...model, id: 2, supportedPeriodType: 'any' as ModelSpecRead['supportedPeriodType'] };
+        expect(toDatasetModels([model, any, { ...model, id: 3, archived: true }])).toEqual([
+            { id: '1', name: 'configured', columns: ['rainfall', 'humidity', 'disease_cases'], periodTypes: ['month'] },
+            { id: '2', name: 'configured', columns: ['rainfall', 'humidity', 'disease_cases'], periodTypes: undefined },
+        ]);
+    });
+});
 
 const model: ModelSpecRead = {
     id: 1,

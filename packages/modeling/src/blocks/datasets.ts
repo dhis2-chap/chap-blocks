@@ -5,5 +5,6 @@ export { InputCompletenessView, type InputCompletenessData } from '../components
 export {
     getModelSupport,
     getRequiredCovariates,
+    toDatasetModels,
     type ModelSupport as DatasetModelSupport,
 } from '../components/NewDatasetForm/utils/datasetModels';

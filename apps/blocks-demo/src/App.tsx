@@ -5,6 +5,7 @@ import { EvaluationGroup } from './sections/Evaluation';
 import { MapsTablesGroup } from './sections/MapsTables';
 import { LayoutGroup } from './sections/Layout';
 import { ControlsGroup } from './sections/Controls';
+import { DatasetsGroup } from './sections/Datasets';
 import { ClientGroup } from './sections/Client';
 import { MonitoringGroup } from './sections/Monitoring';
 import { ModelComparisonGroup } from './sections/ModelComparison';
@@ -79,6 +80,10 @@ const NAV: NavGroup[] = [
             { id: 'search-field', label: 'SearchField' },
             { id: 'sidenav', label: 'Sidenav' },
         ],
+    },
+    {
+        title: 'Datasets',
+        items: [{ id: 'dataset-builder', label: 'DatasetBuilder' }],
     },
     {
         title: 'Data & connection',
@@ -214,6 +219,7 @@ export function App() {
                     <MapsTablesGroup />
                     <LayoutGroup />
                     <ControlsGroup />
+                    <DatasetsGroup />
                     <ClientGroup />
                     <footer className="footer">
                         <p>

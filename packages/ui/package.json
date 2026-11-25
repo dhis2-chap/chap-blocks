@@ -18,7 +18,8 @@
     "./search": "./src/search.tsx",
     "./layout": "./src/ui/index.ts",
     "./tables": "./src/tables.ts",
-    "./metrics": "./src/metrics.ts"
+    "./metrics": "./src/metrics.ts",
+    "./datasets": "./src/datasets.ts"
   },
   "name": "@chap-blocks/ui",
   "dependencies": {
