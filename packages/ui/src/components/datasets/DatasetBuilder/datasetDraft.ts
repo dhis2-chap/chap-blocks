@@ -215,6 +215,20 @@ export const columnsFor = (names: string[], variables: DatasetVariable[], period
 }));
 
 /**
+ * The columns for a new period type: a column whose variable has no values for it switches to one that suggests
+ * the same column name and has, such as weekly instead of monthly precipitation. Other columns stay as they are.
+ */
+export const columnsForPeriodType = (columns: DatasetColumn[], variables: DatasetVariable[], periodType: string): DatasetColumn[] => (
+    columns.map((column) => {
+        const current = variables.find(variable => variable.id === column.variableId);
+        if (!current || isAvailableFor(current, periodType)) return column;
+        const name = suggestColumnName(current);
+        const replacement = variables.find(variable => suggestColumnName(variable) === name && isAvailableFor(variable, periodType));
+        return replacement ? { ...column, variableId: replacement.id } : column;
+    })
+);
+
+/**
  * The draft's columns as Chap Core dataset data sources: which variable each covariate came from. Chap Core only
  * stores this record; the values themselves go in the request's `providedData`. The Modeling app reads these ids as
  * DHIS2 data items, to suggest data and fetch it again for new predictions.

@@ -14,6 +14,7 @@ import {
 import type { Dhis2Calendar } from '@chap-blocks/core';
 import {
     columnsFor,
+    columnsForPeriodType,
     emptyDatasetDraft,
     getDraftPeriods,
     getModelFit,
@@ -51,7 +52,7 @@ export type DatasetBuilderProps = {
     renderLocations?: (props: DatasetLocationPickerProps) => ReactNode;
     /** DHIS2 period types, e.g. `[{ id: 'MONTHLY', name: 'Monthly' }]`. With one, the period type field is hidden. */
     periodTypes: DatasetPeriodType[];
-    /** The DHIS2 calendar to show periods in, e.g. `ethiopian`. Defaults to `gregory`. */
+    /** The calendar to show periods in, e.g. `ethiopic`. `normalizeDhis2CalendarSetting` maps a DHIS2 calendar setting such as `ethiopian`. Defaults to `gregory`. */
     calendar?: Dhis2Calendar;
     locale?: string;
     /**
@@ -140,8 +141,13 @@ export const DatasetBuilder = ({
         const name = draft.columns[index].name.trim() || (variable ? suggestColumnName(variable) : '');
         updateColumn(index, { variableId, name });
     };
-    // Period ids belong to one period type, so a new type starts a new range.
-    const choosePeriodType = (id: string) => update({ periodType: id, startPeriod: '', endPeriod: '' });
+    // Period ids belong to one period type, so a new type starts a new range; columns follow it where they can.
+    const choosePeriodType = (id: string) => update({
+        periodType: id,
+        startPeriod: '',
+        endPeriod: '',
+        columns: columnsForPeriodType(draft.columns, variables, id),
+    });
     const submit = () => {
         setShowErrors(true);
         if (hasErrors(errors)) return;

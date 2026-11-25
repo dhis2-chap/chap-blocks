@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     columnsFor,
+    columnsForPeriodType,
     emptyDatasetDraft,
     getDraftPeriods,
     getModelFit,
@@ -127,6 +128,29 @@ describe('getDraftPeriods', () => {
         expect(getDraftPeriods({ startPeriod: 'nonsense', endPeriod: '202401' })).toEqual([]);
         expect(getDraftPeriods({ startPeriod: '2024W1', endPeriod: '202401' })).toEqual([]);
     });
+
+    it('counts periods in the Ethiopian calendar, across its year end', () => {
+        expect(getDraftPeriods({ startPeriod: '201611', endPeriod: '201702' }, 'ethiopic').map(period => period.name))
+            .toEqual(['Hamle 2016', 'Nehasse 2016', 'Meskerem 2017', 'Tekemt 2017']);
+        expect(getDraftPeriods({ startPeriod: '2016W52', endPeriod: '2017W2' }, 'ethiopic').map(period => period.id))
+            .toEqual(['2016W52', '2017W1', '2017W2']);
+    });
+});
+
+describe('validateDatasetDraft in the Ethiopian calendar', () => {
+    const ethiopian: DatasetOptions = {
+        ...options,
+        calendar: 'ethiopic',
+        periodTypes: [{ id: 'MONTHLY', name: 'Monthly', minPeriodId: '201601', maxPeriodId: '201612' }],
+    };
+
+    it('accepts periods within the bounds and rejects those outside', () => {
+        const draft = { ...validDraft, startPeriod: '201601', endPeriod: '201612' };
+        expect(hasErrors(validateDatasetDraft(draft, ethiopian))).toBe(false);
+        const errors = validateDatasetDraft({ ...draft, endPeriod: '201701' }, ethiopian);
+        expect(errors.endPeriod).toBeTruthy();
+        expect(errors.startPeriod).toBeUndefined();
+    });
 });
 
 describe('getModelFit', () => {
@@ -147,6 +171,26 @@ describe('getModelFit', () => {
 
     it('does not rule out models on period type before one is chosen', () => {
         expect(getModelFit([], '', [model('weekly', [], ['WEEKLY'])]).supported).toHaveLength(1);
+    });
+});
+
+describe('columnsForPeriodType', () => {
+    it('switches a column to a variable with values for the new period type, keeping its name', () => {
+        const columns = [
+            { name: 'disease_cases', variableId: 'cases' },
+            { name: 'precip', variableId: 'rain' },
+            { name: 'other', variableId: 'unknown' },
+        ];
+        expect(columnsForPeriodType(columns, options.variables, 'WEEKLY')).toEqual([
+            { name: 'disease_cases', variableId: 'cases' },
+            { name: 'precip', variableId: 'rain-weekly' },
+            { name: 'other', variableId: 'unknown' },
+        ]);
+    });
+
+    it('leaves a column whose variable has no counterpart, so validation names it', () => {
+        const columns = [{ name: 'rainfall', variableId: 'rain' }];
+        expect(columnsForPeriodType(columns, options.variables, 'YEARLY')).toEqual(columns);
     });
 });
 

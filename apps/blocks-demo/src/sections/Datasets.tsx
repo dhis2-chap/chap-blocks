@@ -12,10 +12,21 @@ import {
 import { Group, Section } from '../gallery/Section';
 import { REGIONS } from '../data/synthetic';
 
-const PERIOD_TYPES: DatasetPeriodType[] = [
-    { id: 'MONTHLY', name: 'Monthly', minPeriodId: '202001', maxPeriodId: '202512' },
-    { id: 'WEEKLY', name: 'Weekly', minPeriodId: '2023W1', maxPeriodId: '2025W52' },
-];
+// Period ids are in the host's calendar, so the bounds differ per calendar.
+const CALENDARS = {
+    gregory: { name: 'Gregorian', periodTypes: [
+        { id: 'MONTHLY', name: 'Monthly', minPeriodId: '202001', maxPeriodId: '202512' },
+        { id: 'WEEKLY', name: 'Weekly', minPeriodId: '2023W1', maxPeriodId: '2025W52' },
+    ] },
+    ethiopic: { name: 'Ethiopian', periodTypes: [
+        { id: 'MONTHLY', name: 'Monthly', minPeriodId: '201201', maxPeriodId: '201812' },
+        { id: 'WEEKLY', name: 'Weekly', minPeriodId: '2015W1', maxPeriodId: '2018W52' },
+    ] },
+    nepali: { name: 'Nepali', periodTypes: [
+        { id: 'MONTHLY', name: 'Monthly', minPeriodId: '207601', maxPeriodId: '208212' },
+    ] },
+} satisfies Record<string, { name: string; periodTypes: DatasetPeriodType[] }>;
+type DemoCalendar = keyof typeof CALENDARS;
 
 // Variables from several sources side by side: the block does not care where the values come from.
 const VARIABLES: DatasetVariable[] = [
@@ -56,7 +67,7 @@ const builderCode = `import { DatasetBuilder, toDataSources } from '@chap-blocks
   // or bring your own picker, e.g. a lazily loaded org unit tree:
   // renderLocations={({ selected, onChange, disabled }) => <OrgUnitTree … />}
   periodTypes={[{ id: 'MONTHLY', name: 'Monthly', minPeriodId: '202001' }]}  // DHIS2 period types
-  calendar="gregory"                  // or 'ethiopian', 'nepali', …
+  calendar="gregory"                  // or 'ethiopic', 'nepali', …; normalizeDhis2CalendarSetting maps the DHIS2 setting
   models={toDatasetModels(models)}    // optional, from '@chap-blocks/modeling/datasets'
   submitting={isSaving}
   onSubmit={draft => {
@@ -69,13 +80,32 @@ function BuilderExample() {
     const [submitted, setSubmitted] = useState<DatasetDraft>();
     const [saving, setSaving] = useState(false);
     const [run, setRun] = useState(0);
+    const [calendar, setCalendar] = useState<DemoCalendar>('gregory');
     return (
         <div className="stack">
+            <div className="toolbar" role="group" aria-label="Calendar">
+                <span>Calendar</span>
+                {(Object.keys(CALENDARS) as DemoCalendar[]).map(id => (
+                    <button
+                        key={id}
+                        type="button"
+                        className={id === calendar ? 'chip chip-on' : 'chip'}
+                        aria-pressed={id === calendar}
+                        onClick={() => {
+                            setCalendar(id);
+                            setSubmitted(undefined);
+                        }}
+                    >
+                        {CALENDARS[id].name}
+                    </button>
+                ))}
+            </div>
             <DatasetBuilder
-                key={run}
+                key={`${calendar}-${run}`}
                 variables={VARIABLES}
                 locations={LOCATIONS}
-                periodTypes={PERIOD_TYPES}
+                periodTypes={CALENDARS[calendar].periodTypes}
+                calendar={calendar}
                 models={MODELS}
                 initialDraft={{ columns: [{ name: 'disease_cases', variableId: 'fbfJHSPpUQD' }] }}
                 submitting={saving}
